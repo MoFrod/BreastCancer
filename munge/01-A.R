@@ -34,5 +34,9 @@ BC1$Normal.nucleoli <- as.numeric(BC1$Normal.nucleoli)
 BC1$Mitoses <- as.numeric(BC1$Mitoses)
 
 # Remove all rows where there are missing values
-BC1 <- na.omit(BC1)
+BC1 <- na.omit(BC1) # 16 removed, matching R Documentation on the Wisconsin Breast Cancer Database
+
+# Check numerical version of class
+c <- as.numeric(BC1$Class)
+head(c, 20) # Benign = 1, Malignant = 2
 

@@ -24,3 +24,47 @@ load.project()
 ## Introduction 
 
 Your goal is to build a classifier for the Class – benign or malignant – of a tissue sample based on (at least some of) the nine cytological characteristics.
+
+• Consider some exploratory data analysis. For example, how might you summarise the data
+graphically and numerically? What does this tell you about the relationships between the
+response variable and predictor variables and about the relationships between predictor variables?
+
+• You should build classifiers using each of the following methods:
+– At least one method for subset selection in logistic regression;
+– At least one regularized form of logistic regression, i.e. with a ridge or LASSO penalty;
+– At least one discriminant analyis method, i.e. the Bayes classifier for linear disciminant
+analysis (LDA) or quadratic discriminant analysis (QDA).
+For the variants of logistic regression, you should present the coefficients of the fitted model,
+and any other useful graphical or numerical summaries. For LDA and QDA present estimates
+of the group means. In each case, discuss what your results show. For example, which variables
+drop out of the model when you use subset selection or the LASSO? What do the parameters
+tell you about the relationships between the response and predictor variables?
+
+• Compare the performance of your models using cross-validation based on the test error. Think
+about how you might do this in a way that makes the comparison fair.
+
+• Select a final “best” classifier, justifying your choice. Does it include all the predictor variables?
+Why or why not?
+
+--- 
+
+Samples arrive periodically as Dr. Wolberg reports his clinical cases. The database therefore reflects this chronological grouping of the data. This grouping information appears immediately below, having been removed from the data itself. Each variable except for the first was converted into 11 primitive numerical attributes with values ranging from 0 through 10. There are 16 missing attribute values. See cited below for more details.
+
+Usage
+data(BreastCancer)
+Format
+A data frame with 699 observations on 11 variables, one being a character variable, 9 being ordered or nominal, and 1 target class.
+
+[,1]	Id	Sample code number
+[,2]	Cl.thickness	Clump Thickness
+[,3]	Cell.size	Uniformity of Cell Size
+[,4]	Cell.shape	Uniformity of Cell Shape
+[,5]	Marg.adhesion	Marginal Adhesion
+[,6]	Epith.c.size	Single Epithelial Cell Size
+[,7]	Bare.nuclei	Bare Nuclei
+[,8]	Bl.cromatin	Bland Chromatin
+[,9]	Normal.nucleoli	Normal Nucleoli
+[,10]	Mitoses	Mitoses
+[,11]	Class	Class
+Source
+Creator: Dr. WIlliam H. Wolberg (physician); University of Wisconsin Hospital ;Madison; Wisconsin; USA
