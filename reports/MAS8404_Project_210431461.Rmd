@@ -1,0 +1,26 @@
+---
+title: "MAS8404_Project_210431461"
+author: "210431461  |   21/10/22"
+output: pdf_document
+fontsize: 12pt
+citation_package: natbib
+bibliography: "references.bib"
+biblio-style: "apalike"
+link-citations: TRUE
+---
+
+\vspace{-0.7cm}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir= normalizePath('..'))
+```
+
+```{r ProjectTemplate, include = FALSE}
+library(ProjectTemplate)
+load.project()
+```
+
+## Introduction 
+
+Your goal is to build a classifier for the Class – benign or malignant – of a tissue sample based on (at least some of) the nine cytological characteristics.
