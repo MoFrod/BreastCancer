@@ -74,6 +74,9 @@ of the group means. In each case, discuss what your results show. For example, w
 drop out of the model when you use subset selection or the LASSO? What do the parameters
 tell you about the relationships between the response and predictor variables?
 
+Performance %>%
+  ggplot(aes(x = av_mem, y = av_util, color = CoV_m)) + geom_point(position = "jitter") + geom_smooth(color = "#525252") + labs(x = "Average Memory (percentage)", y = "Average Utilisation (percentage)", title = "Plot 11: Average Utilisation by Average Memory Usage per Hostname", color = "Memory Variation") # Very clear trajectory of more memory corresponds to utilising  more gpu core
+
 • Compare the performance of your models using cross-validation based on the test error. Think
 about how you might do this in a way that makes the comparison fair.
 

@@ -28,3 +28,31 @@ cor(BC1[,2:10])
 BC2 <- data.matrix(BC1) # Convert into numeric matrix
 heatmap(BC2[,-1])
 
+# GG density plots of variables
+BC1 %>%
+  ggplot(aes(x = Cl.thickness, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Clump Thickness", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
+BC1 %>%
+  ggplot(aes(x = Cell.size, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Cell Size", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
+BC1 %>%
+  ggplot(aes(x = Cell.shape, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Cell shape", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
+BC1 %>%
+  ggplot(aes(x = Marg.adhesion, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Marginal Adhesion", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
+BC1 %>%
+  ggplot(aes(x = Epith.c.size, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Single Epithelial Cell Size", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
+BC1 %>%
+  ggplot(aes(x = Bare.nuclei, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Bare Nuclei", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
+BC1 %>%
+  ggplot(aes(x = Bl.cromatin, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Bland Chromatin", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
+BC1 %>%
+  ggplot(aes(x = Normal.nucleoli, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Normal Nucleoli", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
+BC1 %>%
+  ggplot(aes(x = Mitoses, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Mitoses", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired")
+
