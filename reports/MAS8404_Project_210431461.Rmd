@@ -31,10 +31,44 @@ response variable and predictor variables and about the relationships between pr
 
 • You should build classifiers using each of the following methods:
 – At least one method for subset selection in logistic regression;
+
+(As remarked in lectures, we can perform best subset selection for generalised linear models, of which logistic regression is an example, using the bestglm package.The
+algorithm is exactly the same as for multiple linear regression except that when comparing models containing the same number of predictors, we use the negative loglikelihood, rather than the residual sum of squares. Widely used examples are the AIC (equivalent to Mallow’s Cp in the context of multiple linear regression), the BIC and the cross-validation test error. In all three cases small values of the information criterion indicate a “better” model. PRATICAL 6)
+(By construction, the implied models M0,M1, . . . ,Mp are the same in each case; all that differs
+is the final column giving the information criterion. The models minimising the AIC and BIC are
+starred in each case. )
+
+
 – At least one regularized form of logistic regression, i.e. with a ridge or LASSO penalty;
+
+(One potential problem with ridge regression is that, unlike the subset selection methods from
+Section 4.4, the fitted model will always include all p explanatory variables. This is because
+the penalty term in (4.1) shrinks the coefficients towards zero but doesn’t make any of them
+exactly equal to zero. If all we want to do is prediction using our fitted model, this is not a
+concern. However, when we have a large number p of predictors, including all p of them can
+make interpretation of the fitted model difficult. In such cases it can be convenient to set
+some of the regression coefficients exactly equal to zero so that we only include a subset of
+the predictors in our fitted model. The LASSO2 is an alternative regularisation method to
+ridge regression which performs subset selection in addition to shrinkage. The LASSO estimate is the point at which a contour first hits the diamond. (Chapter 4)
+In a big data setting when p is large relative to n, the estimators of the regression coefficients
+will have large variance, leading to poor predictive performance. Fortunately, all of the approaches discussed in Chapter 4 for linear regression have analogues in the context of
+logistic regression. For example, ridge regression and the LASSO work in exactly the same
+way, adding a penalty of the same form to the loss function which, in this case, is the negative
+of the log-likelihood function. These models can be fitted using the glmnet package in R,
+specifying family="binomial" (Chapter 5).)
+
 – At least one discriminant analyis method, i.e. the Bayes classifier for linear disciminant
-analysis (LDA) or quadratic discriminant analysis (QDA).
-For the variants of logistic regression, you should present the coefficients of the fitted model,
+analysis (LDA) or quadratic discriminant analysis (QDA). (Practical 6)
+(As discussed in the previous section, in LDA we assume that the conditional distributions
+for the predictor variables X are multivariate normal, with a group-specific mean vector and
+a common covariance matrix. Quadratic discriminant analysis (QDA) is similar except the
+different groups are allowed to have different covariance matrices... The details of this estimation procedure for the mean vectors and covariance matrices are
+beyond the scope of this course. For the group membership probabilities πk, one method of
+estimation is to use the sample proportions. - Chapter 5) (It turns out that ridge regression is generally better than the LASSO for shrinkage, whilst only
+the LASSO can perform variable selection. - Chapter 4)
+
+
+- For the variants of logistic regression, you should present the coefficients of the fitted model,
 and any other useful graphical or numerical summaries. For LDA and QDA present estimates
 of the group means. In each case, discuss what your results show. For example, which variables
 drop out of the model when you use subset selection or the LASSO? What do the parameters
@@ -43,8 +77,22 @@ tell you about the relationships between the response and predictor variables?
 • Compare the performance of your models using cross-validation based on the test error. Think
 about how you might do this in a way that makes the comparison fair.
 
+(We typically call the data used to construct the classifier
+our training data. The data used to estimate the pij , and hence “validate” the classifier,
+are called the validation data. If the same data are used to both train and validate the
+classifier, this is called in-sample validation. If the training and validation data sets are
+different, this is called out-of-sample validation... The K×K matrix of counts nij is often called the confusion matrix.
+Although the empirical method is simple and widely used, it also leads to optimistic estimates
+of the performance of the classification scheme due to overfitting. Again this is essentially
+caused by double-use of the data for constructing and testing the classifier.
+Often, especially when comparing classification schemes, it is useful to characterise the overall
+quality of the scheme using a single number summary... The training error rate
+...Clearly,
+in the case of a perfect classifier the error rate would be 0%. We generally prefer classifiers
+with a low error rate. - CHapter 5) Likely to be using in-sample? Out sample mor rigerus - it is possible, but will need to change training data
+
 • Select a final “best” classifier, justifying your choice. Does it include all the predictor variables?
-Why or why not?
+Why or why not? (page 120? in notes of chapter 5)
 
 --- 
 

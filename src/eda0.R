@@ -4,7 +4,7 @@ dim(BC1)
 # Summarise data
 summary(BC1)
 
-# Quick pairs plot of data
+# Quick plot of data
 pairs(BC1[2:10]) # Remove ID column as it represents meta-information and the response variable (M/B)
 # Malignant only for cell thickness 10, cell size 5, 6 and 10, cell shape 10, marg.adhesion 7, 8, 9, epith.c.size 9, bare.nuclei 6 and 9, BI.cromatin 8, 9, 10, normal.nuclei 9 and 10, mitoses 4, 6, and 9
 # Potentially linear relationship between cell size and shape
