@@ -4,23 +4,74 @@ Class <- BC2[,11]-1
 #Extract the predictor variables
 x <- BC2[,2:10] 
 
+# Quick pairs plot
+pairs(x, col=Class+1)
+
 # Standardise the predictor variables 
 xs <- scale(x)
 
+# Sample means
+center <- attr(xs, "scaled:center")
+
+# Sample standard deviations
+scale <- attr(xs, "scaled:scale")
+
 # Reform the data frame
 bc_data <- data.frame(xs, Class)
+
+# Conduct PCA
+pca <- prcomp(x=xs, scale=FALSE) # Already scaled
+print(pca)
+
+pca$sdev
+pca$rotation
+
+# Quickplot
+plot(pca, type = "lines", main="")
+
+# Plot PC1 and PC2
+pc1 <- pca$x[,1]
+pc2 <- pca$x[,2]
+plot(pc2, pc1) 
 
 # Store n and p
 n <- nrow(bc_data)
 p <- ncol(bc_data)- 1
 
 # Fit logistic regression model
-logr_fit = glm(Class ~ ., data = bc_data, family="binomial")
+(logr_fit = glm(Class ~ ., data = bc_data, family="binomial"))
 
 # Summarise the model fit
 summary(logr_fit) # Cell thickness is most associated with malignant, followed by bare.nuclei and bl cromatin
 # A number of variables have very large p-values meaning that, individually, they contribute very little to a model which contains all other predictors. 
 # Only cl.thickness, marg.adhesion, bare.nuclei and bl.cromatin have coefficients significantly different from zero.
+
+# Set up and scale new data
+xs_1 <- data.frame(Cl.thickness=9, Cell.size=7, Cell.shape=6, Marg.adhesion=2, Epith.c.size = 3, Bare.nuclei=4, Bl.cromatin=4, Normal.nucleoli=4, Mitoses=2) %>%
+  scale(center=center, scale=scale) %>%
+  as.data.frame()
+
+# Perform prediction 1
+(p1 = predict(logr_fit, xs_1, type="response")) 
+(y = as.numeric(ifelse(p1 > 0.5, 1, 0))) # Would be likely to have malignant 
+
+# Calculate fitted values 
+phat <- predict(logr_fit, bc_data, type = "response") # Compute predicted probabilities
+yhat = ifelse(phat > 0.5, 1, 0) # Compute predicted values
+
+#Compute the confusion matrix
+(confusion <- table(Observed=bc_data$Class, predicted=yhat))
+
+# Normalise function
+normalise = function(x) {
+  return(x / sum(x))
+}
+
+# Apply function to the confusion matrix
+t(apply(confusion, 1, normalise)) # Performance is okay.
+
+# Calculate the training error
+1 - sum(diag(confusion)) / sum(confusion) # 0.03074671 (3.08%)
 
 # Apply best subset selection
 fit_AIC <- bestglm(bc_data, family = binomial, IC="AIC")

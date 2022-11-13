@@ -25,6 +25,8 @@ load.project()
 
 Your goal is to build a classifier for the Class – benign or malignant – of a tissue sample based on (at least some of) the nine cytological characteristics.
 
+If you have time, do it the other way round - a model conditional on maliganant and another condition not on malignant
+
 • Consider some exploratory data analysis. For example, how might you summarise the data
 graphically and numerically? What does this tell you about the relationships between the
 response variable and predictor variables and about the relationships between predictor variables?
@@ -55,7 +57,8 @@ will have large variance, leading to poor predictive performance. Fortunately, a
 logistic regression. For example, ridge regression and the LASSO work in exactly the same
 way, adding a penalty of the same form to the loss function which, in this case, is the negative
 of the log-likelihood function. These models can be fitted using the glmnet package in R,
-specifying family="binomial" (Chapter 5).)
+specifying family="binomial" (Chapter 5).) (It turns out that ridge regression is generally better than the LASSO for shrinkage, whilst only
+the LASSO can perform variable selection. - Chapter 4)
 
 – At least one discriminant analyis method, i.e. the Bayes classifier for linear disciminant
 analysis (LDA) or quadratic discriminant analysis (QDA). (Practical 6)
@@ -64,8 +67,7 @@ for the predictor variables X are multivariate normal, with a group-specific mea
 a common covariance matrix. Quadratic discriminant analysis (QDA) is similar except the
 different groups are allowed to have different covariance matrices... The details of this estimation procedure for the mean vectors and covariance matrices are
 beyond the scope of this course. For the group membership probabilities πk, one method of
-estimation is to use the sample proportions. - Chapter 5) (It turns out that ridge regression is generally better than the LASSO for shrinkage, whilst only
-the LASSO can perform variable selection. - Chapter 4)
+estimation is to use the sample proportions. - Chapter 5) 
 
 
 - For the variants of logistic regression, you should present the coefficients of the fitted model,
@@ -74,11 +76,14 @@ of the group means. In each case, discuss what your results show. For example, w
 drop out of the model when you use subset selection or the LASSO? What do the parameters
 tell you about the relationships between the response and predictor variables?
 
+coefficient of determination (R squred) means that x% of the variation in log PSa can be explained by regression on the eight standardised predictors
+
 Performance %>%
   ggplot(aes(x = av_mem, y = av_util, color = CoV_m)) + geom_point(position = "jitter") + geom_smooth(color = "#525252") + labs(x = "Average Memory (percentage)", y = "Average Utilisation (percentage)", title = "Plot 11: Average Utilisation by Average Memory Usage per Hostname", color = "Memory Variation") # Very clear trajectory of more memory corresponds to utilising  more gpu core
 
 • Compare the performance of your models using cross-validation based on the test error. Think
 about how you might do this in a way that makes the comparison fair.
+
 
 (We typically call the data used to construct the classifier
 our training data. The data used to estimate the pij , and hence “validate” the classifier,
@@ -96,6 +101,8 @@ with a low error rate. - CHapter 5) Likely to be using in-sample? Out sample mor
 
 • Select a final “best” classifier, justifying your choice. Does it include all the predictor variables?
 Why or why not? (page 120? in notes of chapter 5)
+assessed on thier predictie performance using techniques such as cross validation.
+"what is the probability that an individual has the disease if they have clinical measurements of x?"
 
 --- 
 

@@ -8,7 +8,7 @@ munging: TRUE
 logging: FALSE
 logging_level: INFO
 load_libraries: TRUE
-libraries: reshape2, plyr, tidyverse, shiny, stringr, lubridate, ProjectTemplate, RColorBrewer, knitr, tinytex, kableExtra, gridExtra, psych, ggpubr, mlbench, glmnet, bestglm, jtools, nclSLR
+libraries: reshape2, plyr, tidyverse, shiny, stringr, lubridate, ProjectTemplate, RColorBrewer, knitr, tinytex, kableExtra, gridExtra, psych, ggpubr, mlbench, glmnet, bestglm, jtools, nclSLR, MASS
 as_factors: FALSE
 tables_type: tibble
 attach_internal_libraries: FALSE

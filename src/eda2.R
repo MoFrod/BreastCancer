@@ -4,7 +4,7 @@ grid = 10^seq(5, -3, length = 100)
 #Fit a model with LASSO penalty for each value of the turning parameter
 lasso_fit = glmnet(xs, Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
 
-## Examine the effect of the tuning parameter on the parameter estimates
+li## Examine the effect of the tuning parameter on the parameter estimates
 plot(lasso_fit, xvar="lambda", col=rainbow(p), label=TRUE)
 
 # Extract the coefficients

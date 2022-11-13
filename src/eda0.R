@@ -2,7 +2,7 @@
 dim(BC1)
 
 # Summarise data
-summary(BC1)
+summary(BC1) # 53.83% are malignant
 
 # Quick plot of data
 pairs(BC1[2:10]) # Remove ID column as it represents meta-information and the response variable (M/B)
