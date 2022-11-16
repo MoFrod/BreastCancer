@@ -14,6 +14,7 @@ link-citations: TRUE
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir= normalizePath('..'))
+options(tinytex.verbose = TRUE)
 ```
 
 ```{r ProjectTemplate, include = FALSE}
@@ -21,24 +22,191 @@ library(ProjectTemplate)
 load.project()
 ```
 
-## Introduction 
+### Introduction 
 
-Your goal is to build a classifier for the Class – benign or malignant – of a tissue sample based on (at least some of) the nine cytological characteristics.
+At the University of Wisconsin Hospital, Dr. Wolberg (@Wolberg) collects breast tissue samples from women using fine needle aspiration cytology (FNAC)(@Project). This procedure allows for the physician to determine whether or not the tissue is benign or malignant. The objective of the project outlined by this report is to build a classifier based on the cytological characteristics that determines whether a tissue sample is likely to be benign or malignant.
 
-If you have time, do it the other way round - a model conditional on maliganant and another condition not on malignant
+### Data Description
 
-• Consider some exploratory data analysis. For example, how might you summarise the data
-graphically and numerically? What does this tell you about the relationships between the
-response variable and predictor variables and about the relationships between predictor variables?
+Dr. Wolberg reports his data chronologically to the `mlbench` R package (@Wolberg). The FNAC procedure allows for the identification of nine cytological characteristics (@Project): clump thickness (Cl.thickness / CT), uniformity of cell size (Cell.size / CS), uniformity of cell shape (Cell.shape / Csh), marginal adhesion (Marg.adhesion / MA), single epithelial cell size (Epith.c.size / E), bare nuclei (Bare.nuclei / BN), bland chromatin (Bl.chromatin / BC), normal nucleoli (Normal.nucleoli / NN) and mitoses (Mitoses M). These characteristics for each tissue sample are measured on a discrete scale of one to ten, where smaller numbers indicate that the sample is healthier (@Project). To aid our analysis, the ordinal variables of this scale have been converted to quantitative variables.
 
-• You should build classifiers using each of the following methods:
-– At least one method for subset selection in logistic regression;
+This report explores data from a sample of 699 women in the `BreastCancer` data set; please note that 16 of the 699 observations have been removed due to missing attribute values. It is assumed that this is a random sample of women experiencing symptoms of breast cancer (@Project). Each woman is represented by a sample code number (Id) that reflects the chronological grouping of this data (@Wolberg). The data set also includes the result of further histologist examination (Class), which confirms whether each woman's tissue sample was begin or malignant; this has been converted into a binary variable of 0 or 1, respectively.
 
-(As remarked in lectures, we can perform best subset selection for generalised linear models, of which logistic regression is an example, using the bestglm package.The
-algorithm is exactly the same as for multiple linear regression except that when comparing models containing the same number of predictors, we use the negative loglikelihood, rather than the residual sum of squares. Widely used examples are the AIC (equivalent to Mallow’s Cp in the context of multiple linear regression), the BIC and the cross-validation test error. In all three cases small values of the information criterion indicate a “better” model. PRATICAL 6)
-(By construction, the implied models M0,M1, . . . ,Mp are the same in each case; all that differs
-is the final column giving the information criterion. The models minimising the AIC and BIC are
-starred in each case. )
+### Data Exploration
+
+Of the tissues samples from 683 women, 239 are confirmed as malignant; this suggests that, in our sample, 53.83% of the women who are experiencing breast cancer symptoms have malignant tissue. Whether the tissue is benign or malignant is to be considered the response variable, and the cytological characteristics of tissue are considered to be the predictor variables. The characteristics of malignant tend to have higher numbers on the scale one to ten; this is visualized by the density distributions provided in `Appendix A`. All nine cytological characteristics of the tissue samples are presented below in a scatter plot matrix, where blue indicates the tissue is malignant.
+
+```{r summmary_plot, echo=FALSE, fig.width=9, fig.height=9, fig.align='center'}
+# Convert data into numeric matrix
+BC2 <- data.matrix(BC1) 
+
+# Extract the response variable
+Class <- BC2[,11]-1
+
+#Extract the predictor variables
+x <- BC2[,2:10] 
+
+# Quick pairs plot
+pairs(x, col=c("black", "#1f78b4")[Class+1], main="Plot 1: Scatter Plot Matrix of All Cytological Characteristics")
+```
+
+This plot visualises the relationship between the characteristics; it suggests that there is a strong relationship between CS and CSh, indicating that larger cells have a more significant shape and are likely to be malignant. Whether this relationship is causal or correlated is worthy of further investigation. 
+
+The correlations between other characteristics are not initially obvious and require further investigation. A sample correlation matrix quantifies the strength of a linear relationship between the characteristics, and is visualised by the correlation plot below.
+
+```{r summmary_cor, echo=FALSE, fig.width=5, fig.height=5, fig.align='center'}
+# Observe the correlations
+cor_bc <- cor(BC1[,2:10])
+
+# Plot correlations
+corrplot(cor_bc, order = "hclust", method = "circle", tl.col="black", tl.cex = 0.7, main="Plot 2: Cytological Characteristics Correlation", cex.main=0.8, mar=c(3, 2, 2, 0)) 
+```
+
+\vspace{-1.5cm}
+
+This plot of correlations confirms the strong linear relationship between cell shape and cell size, which suggests that any regression model is unlikely to need both. These characteristics also appear to have stronger correlations with CT, MA, E, BN, BC, and NN. M does not appear to have a strong relationship with any of the characteristics. This indicates that we may not need to use all the predictor variables to build an accurate classifier. 
+
+```{r general_variance, include=FALSE}
+# Sample variance of data
+s <- var(BC2)
+
+# Generalised variance 
+det(s) #55382860
+```
+
+```{r total_variation, include=FALSE}
+# Sample variance of data
+s <- var(BC2)
+
+# Calculate total variation
+s_sq = diag(s) # Extract diagonal elements
+
+(total_variation = sum(s_sq))
+#33283.24
+```
+
+The two single measures of multivariate scatter that can help us generalise how our data varies: generalised variance and total variation. For our data, the generalised variance is 55382860.00 and the total variation is 33283.24. This tells us there is a high degree of scatter about the sample means of each variable, highlighting that it will be important to transform our data so that it is standardised, putting all the variables on a common scale. 
+
+The mean, median and standard deviation for the nine cytological characteristics of the tissue samples are also presented on the next page. 
+
+```{r summary, echo=FALSE}
+my.summary <- tribble(~"Variable", ~"CT", ~"CS", ~"CSh", ~"MA", ~"E", ~"BN", ~"BC", ~"NN", ~"M", "Median", 4.00, 1.00, 1.00, 1.00, 2.00, 1.00, 3.00, 1.00, 1.00, "Mean", 4.44, 3.15, 3.22, 2.83, 3.23, 2.54, 3.45, 2.87, 1.58, "SD", 2.82, 3.07, 2.99, 2.86, 2.22, 3.64, 2.45, 3.05, 1.64)
+
+kable(my.summary, caption = "Summary Statistics of Cytological Characteristics") %>%
+  kable_classic_2(full_width = F, latex_options = "HOLD_position")
+```
+
+Table 1 shows us that the mean is notably higher than the median for CS, CSh, BN and NN, suggesting that characteristics of malignant tissue are skewing the mean. The standard deviation is also quite large. The table below investigates these findings in more detail with separate summary statistics for benign and malignant tissue.
+
+```{r summary_MB, echo=FALSE}
+M_B <- tribble(~Variable, ~"Mean", ~"SD", ~"Median", ~"Mean", ~"SD", ~"Median", 
+               "CT", "2.96", "1.67", "3.00", "7.19", "2.44",  "8.00",
+               "CS", "1,31", "0.86", "1.00", "6.58", "2.72", "6.00",
+               "CSh", "1.14", "0.96", "1.00", "6.56", "2.57", "6.00",
+               "MA", "1.35", "0.92", "1.00", "5.59", "3.20", "5.00",
+               "E", "2.11", "0.88", "2.00", "5.33", "2.44", "5.00",
+               "BN", "1.35", "1.18", "1.00", "7.63", "3.12", "10.00",
+               "BC", "2.08", "1.06", "2.00", "5.97", "2.28", "7.00",
+               "NN", "1.26", "0.95", "1.00", "5.86", "3.35", "6.00", 
+               "M", "1.07", "0.51", "1.00", "2.54", "2.40", "1.00")
+
+kable(M_B, caption = "Summary Statistics by Class",  align = "c") %>%
+  add_header_above(c(" " = 1, "Benign" = 3, "Malignant" = 3)) %>%
+  kable_styling(full_width = F, latex_options = "HOLD_position")
+
+```
+
+Table 2 clearly demonstrates that there is a significant difference between the characteristics of benign and malignant tissue. This is especially true for CT, BN and BC, indicating they may be the most important predictor variables. 
+
+### Subset Selection
+
+The exploratory data analysis suggests that some predictor variables are likely to be better at predicting our response variable than others. If this proves to be correct, this will allow us to learn the effects of fewer predictor variables more precisely. 
+
+Best subset selection uses least squares to fit a linear regression model to each possible subset of of the predictor variables. However, only one of two of the predictors showed an obvious relationship with `Class` (benign or malignant). To identify the best subset of predictor variables a logistic regression model for `Class` is fitted to standardised data. This highlights that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level.
+
+```{r standardise, include=FALSE}
+# Standardise the predictor variables 
+xs <- scale(x)
+
+# Sample means
+center <- attr(xs, "scaled:center")
+
+# Sample standard deviations
+scale <- attr(xs, "scaled:scale")
+
+# Reform the data frame
+bc_data <- data.frame(xs, Class)
+```
+
+```{r logfit, include=FALSE}
+# Store n and p
+n <- nrow(bc_data)
+p <- ncol(bc_data)- 1
+
+# Fit logistic regression model
+(logr_fit = glm(Class ~ ., data = bc_data, family="binomial"))
+
+# Summarise the model fit
+summary(logr_fit) 
+
+```
+
+Best subset selection using the Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC). The results are presented in the plots below.
+
+```{r bss, echo=FALSE, message=FALSE, warning=FALSE}
+# Apply best subset selection
+fit_AIC <- bestglm(bc_data, family = binomial, IC="AIC")
+fit_BIC <- bestglm(bc_data, family = binomial, IC="BIC")
+
+# Identify best-fitting models
+best_AIC = fit_AIC$ModelReport$Bestk
+best_BIC = fit_BIC$ModelReport$Bestk
+
+# Create a multi-panel plotting device
+par(mfrow=c(1,2))
+
+# Produce plots, highlighting optimal value of 'k'
+plot(0:p, fit_AIC$Subsets$AIC, xlab = "Number of Predictors", ylab = "AIC", type = "b", main = "Plot 3: AIC Selection", cex.main=0.8)
+points(best_AIC, fit_AIC$Subsets$AIC[best_AIC+1], col="#1f78b4", pch=16)
+
+plot(0:p, fit_BIC$Subsets$BIC, xlab = "Number of Predictors", ylab = "BIC", type = "b", main="Plot 4: BIC Selection", cex.main=0.8)
+points(best_BIC, fit_BIC$Subsets$BIC[best_BIC+1], col="#1f78b4", pch=16)
+```
+
+In both plots, the blue dot is number of predictor variables identified by the best subset selection approach. It appears that a model with six variables is likely to be a good compromise between five and seven. The cytological characteristics for these six variables are CT, CSh, MA, BN, BC, and NN. These align closely to the strongly correlated variables identified in our correlation matrix above.
+
+```{r six, include=FALSE}
+# It seems like the model with 6 predictors is a good compromise between 5 and 7 
+pstar = 6
+
+# Check which predictors are in the 6-predictor model
+fit_AIC$Subsets[pstar+1,]
+```
+## T/T
+
+```{r train, include=FALSE}
+# Construct a reduced data set containing only the selected predictors
+(indices <- as.logical(fit_AIC$Subsets[pstar+1, 2:(p+1)]))
+bc_data_red = data.frame(bc_data[,indices])
+
+# Create test and train data sets
+set.seed(683) 
+train_index <- sample(nrow(bc_data_red), size = round(0.75 * nrow(bc_data_red)), replace = FALSE)
+train <- bc_data_red[train_index,]
+test <- bc_data_red[-train_index,]
+
+# Obtain regression coefficients for this model
+logr1_fit = glm(Class ~ ., data = train, family="binomial")
+summary(logr1_fit)  # Estimate std. are the maximum liklihood estimates of the regression coefficients. Because Cl. thickness and bare.nuclei are the largest positive values, this indicates that leisons with higher numbers in theres are more likely to have malignant cancer?
+summ(logr1_fit, scale = TRUE) # Presents details of model fit
+summ(logr1_fit, confint = TRUE, digits = 3) # Presents confidence intervals
+```
+
+
+
+**If you have time, do it the other way round - a model conditional on maliganant and another condition not on malignant**
+
+ In all three cases small values of the information criterion indicate a “better” model. 
 
 
 – At least one regularized form of logistic regression, i.e. with a ridge or LASSO penalty;
@@ -66,7 +234,7 @@ analysis (LDA) or quadratic discriminant analysis (QDA). (Practical 6)
 for the predictor variables X are multivariate normal, with a group-specific mean vector and
 a common covariance matrix. Quadratic discriminant analysis (QDA) is similar except the
 different groups are allowed to have different covariance matrices... The details of this estimation procedure for the mean vectors and covariance matrices are
-beyond the scope of this course. For the group membership probabilities πk, one method of
+beyond the scope of this course. For the group membership probabilities k, one method of
 estimation is to use the sample proportions. - Chapter 5) 
 
 
@@ -104,25 +272,49 @@ Why or why not? (page 120? in notes of chapter 5)
 assessed on thier predictie performance using techniques such as cross validation.
 "what is the probability that an individual has the disease if they have clinical measurements of x?"
 
---- 
+\newpage
+### Appendix A: Denisty Distributions of Cytological Characteristics by Class
+```{r density, echo=FALSE, fig.height=11.5, fig.width=9}
+# Density Distribution of Clump Thickness
+CT <- BC1 %>%
+  ggplot(aes(x = Cl.thickness, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Clump Thickness", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
 
-Samples arrive periodically as Dr. Wolberg reports his clinical cases. The database therefore reflects this chronological grouping of the data. This grouping information appears immediately below, having been removed from the data itself. Each variable except for the first was converted into 11 primitive numerical attributes with values ranging from 0 through 10. There are 16 missing attribute values. See cited below for more details.
+# Density Distribution of Cell Size
+CS <- BC1 %>%
+  ggplot(aes(x = Cell.size, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Cell Size", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
 
-Usage
-data(BreastCancer)
-Format
-A data frame with 699 observations on 11 variables, one being a character variable, 9 being ordered or nominal, and 1 target class.
+# Density Distribution
+CSh <- BC1 %>%
+  ggplot(aes(x = Cell.shape, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Cell shape", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
 
-[,1]	Id	Sample code number
-[,2]	Cl.thickness	Clump Thickness
-[,3]	Cell.size	Uniformity of Cell Size
-[,4]	Cell.shape	Uniformity of Cell Shape
-[,5]	Marg.adhesion	Marginal Adhesion
-[,6]	Epith.c.size	Single Epithelial Cell Size
-[,7]	Bare.nuclei	Bare Nuclei
-[,8]	Bl.cromatin	Bland Chromatin
-[,9]	Normal.nucleoli	Normal Nucleoli
-[,10]	Mitoses	Mitoses
-[,11]	Class	Class
-Source
-Creator: Dr. WIlliam H. Wolberg (physician); University of Wisconsin Hospital ;Madison; Wisconsin; USA
+# Density Distribution of Marginal Adhesion
+MA <- BC1 %>%
+  ggplot(aes(x = Marg.adhesion, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Marginal Adhesion", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
+
+# Density Distribution of Single Epithelial Cell Size
+E <- BC1 %>%
+  ggplot(aes(x = Epith.c.size, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Single Epithelial Cell Size", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
+
+# Density Distribution of Bare Nuclei
+BN <- BC1 %>%
+  ggplot(aes(x = Bare.nuclei, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Bare Nuclei", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
+
+# Density Distribution of Bland Chromatin
+BC <- BC1 %>%
+  ggplot(aes(x = Bl.cromatin, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Bland Chromatin", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
+
+# Density Distribution of Normal Nucleoli
+NN <- BC1 %>%
+  ggplot(aes(x = Normal.nucleoli, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Normal Nucleoli", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
+
+# Density Distribution of Mitoses
+M <- BC1 %>%
+  ggplot(aes(x = Mitoses, colour = Class)) + geom_density(kernel = "gaussian", size = 1.5) + labs(x = "Mitoses", y = "Density", legend = "Class") + scale_color_brewer(palette = "Paired") + theme(axis.title.y=element_blank())
+
+# Visualise plots as grid. 
+TQ <- ggarrange(CT, CS, CSh, MA, E, BN, BC, NN, M, ncol=3, nrow=3, common.legend = TRUE, legend="top")
+annotate_figure(TQ, left = text_grob("Density", rot = 90, vjust = 1))
+```
+
+\newpage
+### Bibliography

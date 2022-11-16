@@ -5,7 +5,7 @@ Class <- BC2[,11]-1
 x <- BC2[,2:10] 
 
 # Quick pairs plot
-pairs(x, col=Class+1)
+pairs(x, col=c("black", "#1f78b4")[Class+1])
 
 # Standardise the predictor variables 
 xs <- scale(x)
@@ -20,8 +20,9 @@ scale <- attr(xs, "scaled:scale")
 bc_data <- data.frame(xs, Class)
 
 # Conduct PCA
-pca <- prcomp(x=xs, scale=FALSE) # Already scaled
-print(pca)
+pca <- prcomp(x=bc_data, scale=FALSE) # Already scaled
+print(pca) # Print results
+summary(pca) # We need 6 PCAs to explain 0.93 of the variance, and 3 to explain 0.80.
 
 pca$sdev
 pca$rotation
@@ -30,9 +31,27 @@ pca$rotation
 plot(pca, type = "lines", main="")
 
 # Plot PC1 and PC2
-pc1 <- pca$x[,1]
-pc2 <- pca$x[,2]
-plot(pc2, pc1) 
+pca_df <- as_tibble(pca$x)
+ggplot(pca_df, aes(x=PC1, y=PC2, col=bc_data$Class)) + geom_point(alpha=0.5) 
+
+# Best subset selection
+bss <- regsubsets(Class ~., data=bc_data, method="exhaustive", nvmax=9)
+(bss_summary <- summary(bss)) # summarise best subset selection
+
+# Adjusted Rsq
+bss_summary$adjr2
+(best_adjr2 = which.max(bss_summary$adjr2)) #Optimal number of predictor values (k)
+
+# Mallows's Cp statistic
+bss_summary$cp
+(best_cp = which.min(bss_summary$cp)) #Optimal number of predictor values (k)
+
+#BIC
+bss_summary$bic
+(best_bic = which.min(bss_summary$bic)) #Optimal number of predictor values (k)
+
+
+
 
 # Store n and p
 n <- nrow(bc_data)
@@ -81,12 +100,20 @@ fit_BIC <- bestglm(bc_data, family = binomial, IC="BIC")
 fit_AIC$Subsets
 fit_BIC$Subsets
 
+# Identify best-fitting models
+(best_AIC = fit_AIC$ModelReport$Bestk)
+
+(best_BIC = fit_BIC$ModelReport$Bestk)
+
 # Create a multi-panel plotting device
 par(mfrow=c(1,2))
 
 # Produce plots, highlighting optimal value of 'k'
-plot(0:p, fit_AIC$Subsets$AIC, xlab = "Number of Predictors", ylab = "AIC", type = "b") # 5
-plot(0:p, fit_BIC$Subsets$BIC, xlab = "Number of Predictors", ylab = "BIC", type = "b") # 7
+plot(0:p, fit_AIC$Subsets$AIC, xlab = "Number of Predictors", ylab = "AIC", type = "b") # 7
+points(best_AIC, fit_AIC$Subsets$AIC[best_AIC+1], col="#1f78b4", pch=16)
+
+plot(0:p, fit_BIC$Subsets$BIC, xlab = "Number of Predictors", ylab = "BIC", type = "b") # 5
+points(best_BIC, fit_BIC$Subsets$BIC[best_BIC+1], col="#1f78b4", pch=16)
 
 # It seems like the model with 6 predictors is a good compromise between 5 and 7 
 pstar = 6
@@ -98,8 +125,14 @@ fit_AIC$Subsets[pstar+1,]
 (indices <- as.logical(fit_AIC$Subsets[pstar+1, 2:(p+1)]))
 bc_data_red = data.frame(bc_data[,indices])
 
+# Create test and train data sets
+set.seed(683) 
+train_index <- sample(nrow(bc_data_red), size = round(0.75 * nrow(bc_data_red)), replace = FALSE)
+train <- bc_data_red[train_index,]
+test <- bc_data_red[-train_index,]
+
 # Obtain regression coefficients for this model
-logr1_fit = glm(Class ~ ., data = bc_data_red, family="binomial")
+logr1_fit = glm(Class ~ ., data = train, family="binomial")
 summary(logr1_fit)  # Estimate std. are the maximum liklihood estimates of the regression coefficients. Because Cl. thickness and bare.nuclei are the largest positive values, this indicates that leisons with higher numbers in theres are more likely to have malignant cancer?
 summ(logr1_fit, scale = TRUE) # Presents details of model fit
 summ(logr1_fit, confint = TRUE, digits = 3) # Presents confidence intervals
