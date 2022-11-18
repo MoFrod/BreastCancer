@@ -51,8 +51,6 @@ bss_summary$bic
 (best_bic = which.min(bss_summary$bic)) #Optimal number of predictor values (k)
 
 
-
-
 # Store n and p
 n <- nrow(bc_data)
 p <- ncol(bc_data)- 1
@@ -137,5 +135,23 @@ summary(logr1_fit)  # Estimate std. are the maximum liklihood estimates of the r
 summ(logr1_fit, scale = TRUE) # Presents details of model fit
 summ(logr1_fit, confint = TRUE, digits = 3) # Presents confidence intervals
 
-# Quick plot of effect
-effect_plot(logr1_fit, pred = Cl.thickness, interval = TRUE, plot.points = TRUE, jitter = 0.25) # Why are there points below zero for class?
+# Perform prediction 2
+logr_test = predict(logr1_fit, test, type ="response") 
+yhat_logr_test = ifelse(logr_test > 0.5, 1, 0)
+
+# Compute test error
+(1-mean(test$Class == yhat_logr_test)) #0.05847953
+
+#Compute the confusion matrix
+(confusion_2 <- table(Observed=train$Class, predicted=$class))
+
+# Normalise function
+normalise = function(x) {
+  return(x / sum(x))
+}
+
+# Apply function to the confusion matrix
+t(apply(confusion, 1, normalise)) # Performance is okay.
+
+# Calculate the training error
+1 - sum(diag(confusion)) / sum(confusion) # 0.03074671 (3.08%)

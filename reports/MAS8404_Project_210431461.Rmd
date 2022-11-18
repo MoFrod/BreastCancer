@@ -24,17 +24,17 @@ load.project()
 
 ### Introduction 
 
-At the University of Wisconsin Hospital, Dr. Wolberg (@Wolberg) collects breast tissue samples from women using fine needle aspiration cytology (FNAC)(@Project). This procedure allows for the physician to determine whether or not the tissue is benign or malignant. The objective of the project outlined by this report is to build a classifier based on the cytological characteristics that determines whether a tissue sample is likely to be benign or malignant.
+At the University of Wisconsin Hospital, Dr. Wolberg (@Wolberg) collected breast tissue samples from women using fine needle aspiration cytology (FNAC)(@Project). Histological examination of the tissue collected by this procedure allows for the physician to determine whether or not it is benign or malignant. Our objective is to build a classifier based on the cytological characteristics that determines whether a tissue sample is likely to be benign or malignant.
 
 ### Data Description
 
-Dr. Wolberg reports his data chronologically to the `mlbench` R package (@Wolberg). The FNAC procedure allows for the identification of nine cytological characteristics (@Project): clump thickness (Cl.thickness / CT), uniformity of cell size (Cell.size / CS), uniformity of cell shape (Cell.shape / Csh), marginal adhesion (Marg.adhesion / MA), single epithelial cell size (Epith.c.size / E), bare nuclei (Bare.nuclei / BN), bland chromatin (Bl.chromatin / BC), normal nucleoli (Normal.nucleoli / NN) and mitoses (Mitoses M). These characteristics for each tissue sample are measured on a discrete scale of one to ten, where smaller numbers indicate that the sample is healthier (@Project). To aid our analysis, the ordinal variables of this scale have been converted to quantitative variables.
+Dr. Wolberg reported his data chronologically to the `mlbench` R package (@Wolberg). The FNAC procedure allows for the identification of nine cytological characteristics (@Project): clump thickness (Cl.thickness / CT), uniformity of cell size (Cell.size / CS), uniformity of cell shape (Cell.shape / CSh), marginal adhesion (Marg.adhesion / MA), single epithelial cell size (Epith.c.size / E), bare nuclei (Bare.nuclei / BN), bland chromatin (Bl.chromatin / BC), normal nucleoli (Normal.nucleoli / NN) and mitoses (Mitoses M). These characteristics for each tissue sample are measured on a discrete scale of one to ten, where smaller numbers indicate that the sample is healthier (@Project). To aid our analysis, the ordinal variables of this scale have been converted to quantitative variables.
 
-This report explores data from a sample of 699 women in the `BreastCancer` data set; please note that 16 of the 699 observations have been removed due to missing attribute values. It is assumed that this is a random sample of women experiencing symptoms of breast cancer (@Project). Each woman is represented by a sample code number (Id) that reflects the chronological grouping of this data (@Wolberg). The data set also includes the result of further histologist examination (Class), which confirms whether each woman's tissue sample was begin or malignant; this has been converted into a binary variable of 0 or 1, respectively.
+This report explores data from a sample of 699 women in the `BreastCancer` data set; please note that 16 of the 699 observations have been removed due to missing attribute values. It is assumed that this is a random sample of women experiencing symptoms of breast cancer (@Project). Each woman is represented by a sample code number (Id) that reflects the chronological grouping of this data (@Wolberg). The data set also includes the result of further histological examination (Class), which confirms whether each woman's tissue sample was begin or malignant; this has been converted into a binary variable of 0 or 1, respectively.
 
 ### Data Exploration
 
-Of the tissues samples from 683 women, 239 are confirmed as malignant; this suggests that, in our sample, 53.83% of the women who are experiencing breast cancer symptoms have malignant tissue. Whether the tissue is benign or malignant is to be considered the response variable, and the cytological characteristics of tissue are considered to be the predictor variables. The characteristics of malignant tend to have higher numbers on the scale one to ten; this is visualized by the density distributions provided in `Appendix A`. All nine cytological characteristics of the tissue samples are presented below in a scatter plot matrix, where blue indicates the tissue is malignant.
+Of the tissues samples from 683 women, 239 are confirmed as malignant; in our sample, 53.83% of the women who are experiencing breast cancer symptoms have malignant tissue. Whether the tissue is benign or malignant is considered the response variable, and the cytological characteristics of tissue are considered as the predictor variables. The characteristics of malignant tend to have higher numbers on the scale one to ten; this is visualized by the density distributions provided in `Appendix A`. All nine cytological characteristics of the tissue samples are presented below in a scatter plot matrix, where blue indicates the tissue is malignant.
 
 ```{r summmary_plot, echo=FALSE, fig.width=9, fig.height=9, fig.align='center'}
 # Convert data into numeric matrix
@@ -64,7 +64,7 @@ corrplot(cor_bc, order = "hclust", method = "circle", tl.col="black", tl.cex = 0
 
 \vspace{-1.5cm}
 
-This plot of correlations confirms the strong linear relationship between cell shape and cell size, which suggests that any regression model is unlikely to need both. These characteristics also appear to have stronger correlations with CT, MA, E, BN, BC, and NN. M does not appear to have a strong relationship with any of the characteristics. This indicates that we may not need to use all the predictor variables to build an accurate classifier. 
+In this plot, the correlation is larger when the circle is both darker and larger. This plot confirms the strong linear relationship between cell shape and cell size, which suggests that any regression model is unlikely to need both. These characteristics also appear to have stronger correlations with CT, MA, E, BN, BC, and NN. M does not appear to have a strong relationship with any of the characteristics. This indicates that a selection of the predictor variables can be used to build an accurate classifier. 
 
 ```{r general_variance, include=FALSE}
 # Sample variance of data
@@ -85,7 +85,7 @@ s_sq = diag(s) # Extract diagonal elements
 #33283.24
 ```
 
-The two single measures of multivariate scatter that can help us generalise how our data varies: generalised variance and total variation. For our data, the generalised variance is 55382860.00 and the total variation is 33283.24. This tells us there is a high degree of scatter about the sample means of each variable, highlighting that it will be important to transform our data so that it is standardised, putting all the variables on a common scale. 
+The two single measures of multivariate scatter help us generalise how our data varies: generalised variance and total variation. For our data, the generalised variance is 55382860.00 and the total variation is 33283.24. This tells us there is a high degree of scatter about the sample means of each variable, highlighting that it will be important to transform our data so that it is standardised, putting all the variables on a common scale. 
 
 The mean, median and standard deviation for the nine cytological characteristics of the tissue samples are also presented on the next page. 
 
@@ -122,7 +122,7 @@ Table 2 clearly demonstrates that there is a significant difference between the 
 
 The exploratory data analysis suggests that some predictor variables are likely to be better at predicting our response variable than others. If this proves to be correct, this will allow us to learn the effects of fewer predictor variables more precisely. 
 
-Best subset selection uses least squares to fit a linear regression model to each possible subset of of the predictor variables. However, only one of two of the predictors showed an obvious relationship with `Class` (benign or malignant). To identify the best subset of predictor variables a logistic regression model for `Class` is fitted to standardised data. This highlights that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level.
+Best subset selection for binary is logistic - gives smooth curve However, only one of two of the predictors showed an obvious relationship with `Class` (benign or malignant). To identify the best subset of predictor variables a logistic regression model for `Class` is fitted to standardised data. This highlights that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level.
 
 ```{r standardise, include=FALSE}
 # Standardise the predictor variables 
@@ -182,7 +182,9 @@ pstar = 6
 # Check which predictors are in the 6-predictor model
 fit_AIC$Subsets[pstar+1,]
 ```
-## T/T
+## Modelling
+
+To increase the reliability of our approach, the data is divided into two to allow for out-of-sample validation. Good practice suggests that a ratio between 70-80% for the training data set and 20-30% for the test data set (REFERENCE). In this project, 75% of the data is randomly allocated to a training data set to construct our classifier, with the remaining 25% becoming the testing data set to compute our test errors. 
 
 ```{r train, include=FALSE}
 # Construct a reduced data set containing only the selected predictors
@@ -201,6 +203,40 @@ summary(logr1_fit)  # Estimate std. are the maximum liklihood estimates of the r
 summ(logr1_fit, scale = TRUE) # Presents details of model fit
 summ(logr1_fit, confint = TRUE, digits = 3) # Presents confidence intervals
 ```
+**Logistic Regression**
+
+Logistic regression is used to assign observations to discrete response variables. When applied to our complete data set of six predictor variables using 'in-sample validation', the training error is 3.08%.
+
+```{r in-sample, include = FALSE}
+# Set up and scale new data
+xs_1 <- data.frame(Cl.thickness=9, Cell.size=7, Cell.shape=6, Marg.adhesion=2, Epith.c.size = 3, Bare.nuclei=4, Bl.cromatin=4, Normal.nucleoli=4, Mitoses=2) %>%
+  scale(center=center, scale=scale) %>%
+  as.data.frame()
+
+# Perform prediction 1
+(p1 = predict(logr_fit, xs_1, type="response")) 
+(y = as.numeric(ifelse(p1 > 0.5, 1, 0))) # Would be likely to have malignant 
+
+# Calculate fitted values 
+phat <- predict(logr_fit, bc_data, type = "response") # Compute predicted probabilities
+yhat = ifelse(phat > 0.5, 1, 0) # Compute predicted values
+
+#Compute the confusion matrix
+(confusion <- table(Observed=bc_data$Class, predicted=yhat))
+
+# Normalise function
+normalise = function(x) {
+  return(x / sum(x))
+}
+
+# Apply function to the confusion matrix
+t(apply(confusion, 1, normalise)) # Performance is okay.
+
+# Calculate the training error
+1 - sum(diag(confusion)) / sum(confusion) # 0.03074671 (3.08%)
+```
+
+This is not very interesting as only the test error measures how well the method performs on previously unseen data (@Project). When using our train and test data sets for out-of-sample validation, 
 
 
 
