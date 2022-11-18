@@ -135,15 +135,16 @@ summary(logr1_fit)  # Estimate std. are the maximum liklihood estimates of the r
 summ(logr1_fit, scale = TRUE) # Presents details of model fit
 summ(logr1_fit, confint = TRUE, digits = 3) # Presents confidence intervals
 
-# Perform prediction 2
-logr_test = predict(logr1_fit, test, type ="response") 
-yhat_logr_test = ifelse(logr_test > 0.5, 1, 0)
+# Training error
+predict(logr1_fit, train, type="response") 
+(y = as.numeric(ifelse(p1 > 0.5, 1, 0))) # Would be likely to have malignant 
 
-# Compute test error
-(1-mean(test$Class == yhat_logr_test)) #0.05847953
+# Calculate fitted values 
+phat <- predict(logr1_fit, train, type = "response") # Compute predicted probabilities
+yhat <- ifelse(phat > 0.5, 1, 0) # Compute predicted values
 
 #Compute the confusion matrix
-(confusion_2 <- table(Observed=train$Class, predicted=$class))
+(confusion <- table(Observed=train$Class, predicted=yhat))
 
 # Normalise function
 normalise = function(x) {
@@ -151,7 +152,44 @@ normalise = function(x) {
 }
 
 # Apply function to the confusion matrix
-t(apply(confusion, 1, normalise)) # Performance is okay.
+t(apply(confusion, 1, normalise)) # Performance is okay.# Perform prediction 2
 
 # Calculate the training error
-1 - sum(diag(confusion)) / sum(confusion) # 0.03074671 (3.08%)
+1 - sum(diag(confusion)) / sum(confusion) # 0.02014652 (2.02%)
+
+# Calculate Test error
+logr_test = predict(logr1_fit, test, type ="response") 
+yhat_logr_test = ifelse(logr_test > 0.5, 1, 0)
+
+#Compute the confusion matrix
+(confusion_2 <- table(Observed=test$Class, predicted=yhat_logr_test))
+
+# Apply function to the confusion matrix
+t(apply(confusion_2, 1, normalise)) # Performance is okay.
+
+# Compute test error
+(1-mean(test$Class == yhat_logr_test)) #0.05847953 (5.84%)
+
+#Compute the confusion matrix
+(confusion_2 <- table(Observed=test$Class, predicted=yhat_logr_test))
+
+# Apply function to the confusion matrix
+t(apply(confusion_2, 1, normalise)) # Performance is okay.
+
+# ROC plot
+logr_test_roc <- roc(test$Class ~ logr_test, plot = TRUE, print.auc = TRUE)
+
+# Cross validation
+
+costfunc  <- function(obs, pred.p){
+  weight1 <- 5   # define the weight for "true=1 but pred=0" (FN)
+  weight0 <- 1    # define the weight for "true=0 but pred=1" (FP)
+  pcut <- 1/(1+weight1/weight0)
+  c1 <- (obs==1)&(pred.p < pcut)    # count for "true=1 but pred=0"   (FN)
+  c0 <- (obs==0)&(pred.p >= pcut)   # count for "true=0 but pred=1"   (FP)
+  cost <- mean(weight1*c1 + weight0*c0)  # misclassification with weight
+  return(cost) # you have to return to a value when you write R functions
+} # end 
+
+(cv.logr_fit = cv.glm(data = bc_data_red, glmfit = logr_fit, cost=costfunc, K=10))
+cv.logr_fit$delta[2] # The first component of delta is the raw cross-validation estimate of prediction error. The second component is the adjusted cross-validation estimate. The adjustment is designed to compensate for the bias introduced by not using leave-one-out cross-validation.

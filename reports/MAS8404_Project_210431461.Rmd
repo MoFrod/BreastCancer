@@ -52,7 +52,7 @@ pairs(x, col=c("black", "#1f78b4")[Class+1], main="Plot 1: Scatter Plot Matrix o
 
 This plot visualises the relationship between the characteristics; it suggests that there is a strong relationship between CS and CSh, indicating that larger cells have a more significant shape and are likely to be malignant. Whether this relationship is causal or correlated is worthy of further investigation. 
 
-The correlations between other characteristics are not initially obvious and require further investigation. A sample correlation matrix quantifies the strength of a linear relationship between the characteristics, and is visualised by the correlation plot below.
+The correlations between other characteristics are not initially obvious and require deeper analysis. A sample correlation matrix quantifies the strength of a linear relationship between the characteristics, and is visualised by the correlation plot below.
 
 ```{r summmary_cor, echo=FALSE, fig.width=5, fig.height=5, fig.align='center'}
 # Observe the correlations
@@ -64,7 +64,7 @@ corrplot(cor_bc, order = "hclust", method = "circle", tl.col="black", tl.cex = 0
 
 \vspace{-1.5cm}
 
-In this plot, the correlation is larger when the circle is both darker and larger. This plot confirms the strong linear relationship between cell shape and cell size, which suggests that any regression model is unlikely to need both. These characteristics also appear to have stronger correlations with CT, MA, E, BN, BC, and NN. M does not appear to have a strong relationship with any of the characteristics. This indicates that a selection of the predictor variables can be used to build an accurate classifier. 
+In this plot, the correlation is more significant when the circle is both darker and larger. This plot confirms the strong linear relationship between cell shape and cell size, which suggests that any regression model is unlikely to need both. These characteristics also appear to have stronger relationships with CT, MA, E, BN, BC, and NN. M does not appear to have a significant correlation with any of the characteristics. This indicates that a selection of the predictor variables could be used to build an accurate classifier. 
 
 ```{r general_variance, include=FALSE}
 # Sample variance of data
@@ -90,8 +90,10 @@ The two single measures of multivariate scatter help us generalise how our data 
 The mean, median and standard deviation for the nine cytological characteristics of the tissue samples are also presented on the next page. 
 
 ```{r summary, echo=FALSE}
+# Create table
 my.summary <- tribble(~"Variable", ~"CT", ~"CS", ~"CSh", ~"MA", ~"E", ~"BN", ~"BC", ~"NN", ~"M", "Median", 4.00, 1.00, 1.00, 1.00, 2.00, 1.00, 3.00, 1.00, 1.00, "Mean", 4.44, 3.15, 3.22, 2.83, 3.23, 2.54, 3.45, 2.87, 1.58, "SD", 2.82, 3.07, 2.99, 2.86, 2.22, 3.64, 2.45, 3.05, 1.64)
 
+# Improve visuals of table
 kable(my.summary, caption = "Summary Statistics of Cytological Characteristics") %>%
   kable_classic_2(full_width = F, latex_options = "HOLD_position")
 ```
@@ -99,6 +101,7 @@ kable(my.summary, caption = "Summary Statistics of Cytological Characteristics")
 Table 1 shows us that the mean is notably higher than the median for CS, CSh, BN and NN, suggesting that characteristics of malignant tissue are skewing the mean. The standard deviation is also quite large. The table below investigates these findings in more detail with separate summary statistics for benign and malignant tissue.
 
 ```{r summary_MB, echo=FALSE}
+# Create table
 M_B <- tribble(~Variable, ~"Mean", ~"SD", ~"Median", ~"Mean", ~"SD", ~"Median", 
                "CT", "2.96", "1.67", "3.00", "7.19", "2.44",  "8.00",
                "CS", "1,31", "0.86", "1.00", "6.58", "2.72", "6.00",
@@ -110,6 +113,7 @@ M_B <- tribble(~Variable, ~"Mean", ~"SD", ~"Median", ~"Mean", ~"SD", ~"Median",
                "NN", "1.26", "0.95", "1.00", "5.86", "3.35", "6.00", 
                "M", "1.07", "0.51", "1.00", "2.54", "2.40", "1.00")
 
+# Improve visuals of table
 kable(M_B, caption = "Summary Statistics by Class",  align = "c") %>%
   add_header_above(c(" " = 1, "Benign" = 3, "Malignant" = 3)) %>%
   kable_styling(full_width = F, latex_options = "HOLD_position")
@@ -122,7 +126,7 @@ Table 2 clearly demonstrates that there is a significant difference between the 
 
 The exploratory data analysis suggests that some predictor variables are likely to be better at predicting our response variable than others. If this proves to be correct, this will allow us to learn the effects of fewer predictor variables more precisely. 
 
-Best subset selection for binary is logistic - gives smooth curve However, only one of two of the predictors showed an obvious relationship with `Class` (benign or malignant). To identify the best subset of predictor variables a logistic regression model for `Class` is fitted to standardised data. This highlights that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level.
+As our response variable is binary (benign or malignant), apply logistic regression is an appropriate approach to identify the best subset of predictor variables. After fitting the logistic regression model for `Class` to standardised data it is clear that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level.
 
 ```{r standardise, include=FALSE}
 # Standardise the predictor variables 
@@ -151,7 +155,7 @@ summary(logr_fit)
 
 ```
 
-Best subset selection using the Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC). The results are presented in the plots below.
+To confirm how many predictor variables would be the best subset selection, the Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are applied. The results are presented in the two plots below.
 
 ```{r bss, echo=FALSE, message=FALSE, warning=FALSE}
 # Apply best subset selection
@@ -182,9 +186,10 @@ pstar = 6
 # Check which predictors are in the 6-predictor model
 fit_AIC$Subsets[pstar+1,]
 ```
-## Modelling
 
-To increase the reliability of our approach, the data is divided into two to allow for out-of-sample validation. Good practice suggests that a ratio between 70-80% for the training data set and 20-30% for the test data set (REFERENCE). In this project, 75% of the data is randomly allocated to a training data set to construct our classifier, with the remaining 25% becoming the testing data set to compute our test errors. 
+### Modelling
+
+To increase the reliability of our approach, the data is divided in two to allow for out-of-sample validation. In this project, 80% of the data is randomly allocated to a training data set to construct our classifier, with the remaining 20% becoming the testing data set to compute our test errors. 
 
 ```{r train, include=FALSE}
 # Construct a reduced data set containing only the selected predictors
@@ -193,7 +198,7 @@ bc_data_red = data.frame(bc_data[,indices])
 
 # Create test and train data sets
 set.seed(683) 
-train_index <- sample(nrow(bc_data_red), size = round(0.75 * nrow(bc_data_red)), replace = FALSE)
+train_index <- sample(nrow(bc_data_red), size = round(0.80 * nrow(bc_data_red)), replace = FALSE)
 train <- bc_data_red[train_index,]
 test <- bc_data_red[-train_index,]
 
@@ -203,26 +208,30 @@ summary(logr1_fit)  # Estimate std. are the maximum liklihood estimates of the r
 summ(logr1_fit, scale = TRUE) # Presents details of model fit
 summ(logr1_fit, confint = TRUE, digits = 3) # Presents confidence intervals
 ```
-**Logistic Regression**
+*Logistic Regression*
 
-Logistic regression is used to assign observations to discrete response variables. When applied to our complete data set of six predictor variables using 'in-sample validation', the training error is 3.08%.
+Logistic regression is used to assign observations to discrete response variables. When applied to our complete data set of six predictor variables, the maximum likelihood estimates of the regression coefficients are presented on the next page.
 
-```{r in-sample, include = FALSE}
-# Set up and scale new data
-xs_1 <- data.frame(Cl.thickness=9, Cell.size=7, Cell.shape=6, Marg.adhesion=2, Epith.c.size = 3, Bare.nuclei=4, Bl.cromatin=4, Normal.nucleoli=4, Mitoses=2) %>%
-  scale(center=center, scale=scale) %>%
-  as.data.frame()
+```{r log_coefficients, echo=FALSE}
+# Create table
+logr_coefficients <- tribble(~"", ~"Intercept", ~"CT", ~"CSh", ~"MA", ~"BN", ~"BC", ~"NN", "Estimates", -1.28, 2.08, 1.14, 1.39, 1.69, 1.52, 0.87)
 
-# Perform prediction 1
-(p1 = predict(logr_fit, xs_1, type="response")) 
+# Improve visuals
+kable(logr_coefficients, caption = "Estimates of Regression Coefficients for Logistic Regression") %>%
+  kable_classic_2(full_width = F, latex_options = "HOLD_position")
+```
+
+```{r log_error, include = FALSE}
+# Training error
+p1 <- predict(logr1_fit, train, type="response") 
 (y = as.numeric(ifelse(p1 > 0.5, 1, 0))) # Would be likely to have malignant 
 
 # Calculate fitted values 
-phat <- predict(logr_fit, bc_data, type = "response") # Compute predicted probabilities
-yhat = ifelse(phat > 0.5, 1, 0) # Compute predicted values
+phat <- predict(logr1_fit, train, type = "response") # Compute predicted probabilities
+yhat <- ifelse(phat > 0.5, 1, 0) # Compute predicted values
 
 #Compute the confusion matrix
-(confusion <- table(Observed=bc_data$Class, predicted=yhat))
+(confusion <- table(Observed=train$Class, predicted=yhat))
 
 # Normalise function
 normalise = function(x) {
@@ -230,13 +239,109 @@ normalise = function(x) {
 }
 
 # Apply function to the confusion matrix
-t(apply(confusion, 1, normalise)) # Performance is okay.
+t(apply(confusion, 1, normalise)) # Performance is okay.# Perform prediction 2
 
 # Calculate the training error
-1 - sum(diag(confusion)) / sum(confusion) # 0.03074671 (3.08%)
+1 - sum(diag(confusion)) / sum(confusion) # 0.02014652 (2.02%)
+
+# Calculate Test error
+logr_test = predict(logr1_fit, test, type ="response") 
+yhat_logr_test = ifelse(logr_test > 0.5, 1, 0)
+
+#Compute the confusion matrix
+(confusion_2 <- table(Observed=test$Class, predicted=yhat_logr_test))
+
+# Apply function to the confusion matrix
+t(apply(confusion_2, 1, normalise)) # Performance is okay.
+
+# Compute test error
+(1-mean(test$Class == yhat_logr_test)) #0.05847953 (5.84%)
+
+#Compute the confusion matrix
+(confusion_2 <- table(Observed=test$Class, predicted=yhat_logr_test))
+
+# Apply function to the confusion matrix
+t(apply(confusion_2, 1, normalise)) # Performance is okay.
 ```
 
-This is not very interesting as only the test error measures how well the method performs on previously unseen data (@Project). When using our train and test data sets for out-of-sample validation, 
+With 'in-sample validation', the training error is 2.02%. This is not very interesting as only the test error measures how well the method performs on previously unseen data (@Project). When using our train and test data sets for out-of-sample validation, the test error is 5.85%. This is slightly larger than the training error, which may indicate that necessary predictor variables have been included. (IF you HAVE TIME RE-RUN EXCLUDING CELL-SHAPE which has the largest p-variable)
+
+The accuracy of our model is visualised by the Receiver Operating Characteristic (ROC) curve below. 
+
+```{r log_roc, echo=FALSE, message=FALSE, warning=FALSE}
+# ROC plot of logistic regression
+logr_test_roc <- roc(test$Class ~ logr_test, plot = TRUE, print.auc = TRUE, main="Plot 5: Logistic Regression ROC", col="#1f78b4")
+```
+
+The measure of accuracy is the area under the ROC curve. This curve is far from the diagonal and is quite close to the perfect accuracy area of 1.00. Helpfully, the plot specifies the accuracy of our model as 0.99.
+
+*LASSO Regression*
+
+Regularisation methods, such as LASSO, are shrinkage methods; they work to minimise the loss function and shrink the maximum likelihood estimates of regression coefficients to zero. LASSO performs subset selection in addition to shrinkage; given that the test error was higher than the training error for logistic regression, this method is selected over ridge regression. The LASSO regression applied to the same training data as above is visualised below.
+
+```{r LASSO, echo=FALSE}
+# Choose grid of values for the turning parameter
+grid = 10^seq(5, -3, length = 100)
+
+#Fit a model with LASSO penalty for each value of the turning parameter
+lasso_fit_train = glmnet(train[1:6], train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
+
+## Examine the effect of the tuning parameter on the parameter estimates
+plot(lasso_fit_train, xvar="lambda", col=rainbow(p), label=TRUE, main = "Plot 6: LASSO Regression", cex.main=0.8, mar=c(3, 2, 2, 0))
+```
+
+The coefficients of the LASSO are best presented graphically; the plot below shows the effect of the turning parameter when applying LASSO to our training data set.
+
+```{r Lasso_coefficients, echo=FALSE}
+# Plot coefficients
+plot(lasso_fit_train, xvar="lambda", col=1:7, label=TRUE, main = "Plot 7: LASSO Regression Coefficients", cex.main=0.8, mar=c(3, 2, 2, 0))
+```
+
+This plot shows us that the third variable, MA (green), is the first to drop out of the model, followed by our 6th variable, NN (magenta), and so on. 
+
+To choose an appropriate value for the turning parameter of LASSO, 10-fold cross-validation is used. This allows the optimal turning parameter and mean MSE to be calculated, which are 0.001 and 0.004222146, respectively. The regression coefficients obtained by performing the LASSO with the optimal turning parameter are shown in the table below.
+
+```{r MSE, include=FALSE}
+# Cross-validation
+train_l <- as.matrix(train)
+lasso_train_cv_fit = cv.glmnet(train_l, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
+plot(lasso_train_cv_fit)
+
+## Identify the optimal value for the tuning parameter
+(lambda_lasso_min = lasso_train_cv_fit$lambda.min)
+# 0.001
+(which_lambda_lasso = which(lasso_train_cv_fit$lambda == lambda_lasso_min))
+#100
+
+# Extract corresponding mean MSE
+lasso_train_cv_fit$cvm[which_lambda_lasso] #0.004222146
+
+## Find the parameter estimates associated with optimal value of the tuning parameter
+coef(lasso_train_cv_fit, s=lambda_lasso_min)
+
+# Create table
+lasso_coefficients <- tribble(~"", ~"Intercept", ~"CT", ~"CSh", ~"MA", ~"BN", ~"BC", ~"NN", "Estimates", -5.43, 0.35, 0.52, 0.15, 0.60, 0.25, 0.17)
+
+# Improve visuals
+kable(lasso_coefficients, caption = "Estimates of Regression Coefficients for Logistic Regression") %>%
+  kable_classic_2(full_width = F, latex_options = "HOLD_position")
+```
+```{r lasso_test, include=FALSE}
+# Calculate Test error
+#Fit a model with LASSO penalty for each value of the turning parameter
+lasso1_fit_train = glmnet(train, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
+# Compute test error
+test_l <- as.matrix(test)
+lasso_test = predict(lasso1_fit_train, test_l, type ="response") 
+yhat_lasso_test = ifelse(lasso_test > 0.5, 1, 0)
+
+# Compute test error
+(1-mean(test$Class == yhat_lasso_test)) #0.2572263 25.72%
+```
+
+When using our train and test data sets for out-of-sample validation, the test error is 25.75%, so significantly higher than the logistic regression.
+
+*Discriminant Analysis*
 
 
 
@@ -245,24 +350,6 @@ This is not very interesting as only the test error measures how well the method
  In all three cases small values of the information criterion indicate a “better” model. 
 
 
-– At least one regularized form of logistic regression, i.e. with a ridge or LASSO penalty;
-
-(One potential problem with ridge regression is that, unlike the subset selection methods from
-Section 4.4, the fitted model will always include all p explanatory variables. This is because
-the penalty term in (4.1) shrinks the coefficients towards zero but doesn’t make any of them
-exactly equal to zero. If all we want to do is prediction using our fitted model, this is not a
-concern. However, when we have a large number p of predictors, including all p of them can
-make interpretation of the fitted model difficult. In such cases it can be convenient to set
-some of the regression coefficients exactly equal to zero so that we only include a subset of
-the predictors in our fitted model. The LASSO2 is an alternative regularisation method to
-ridge regression which performs subset selection in addition to shrinkage. The LASSO estimate is the point at which a contour first hits the diamond. (Chapter 4)
-In a big data setting when p is large relative to n, the estimators of the regression coefficients
-will have large variance, leading to poor predictive performance. Fortunately, all of the approaches discussed in Chapter 4 for linear regression have analogues in the context of
-logistic regression. For example, ridge regression and the LASSO work in exactly the same
-way, adding a penalty of the same form to the loss function which, in this case, is the negative
-of the log-likelihood function. These models can be fitted using the glmnet package in R,
-specifying family="binomial" (Chapter 5).) (It turns out that ridge regression is generally better than the LASSO for shrinkage, whilst only
-the LASSO can perform variable selection. - Chapter 4)
 
 – At least one discriminant analyis method, i.e. the Bayes classifier for linear disciminant
 analysis (LDA) or quadratic discriminant analysis (QDA). (Practical 6)
