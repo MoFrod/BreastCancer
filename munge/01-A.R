@@ -1,3 +1,6 @@
+#Install
+install.packages("nclSLR", repos = "http://R-Forge.R-project.org") 
+
 # Load mlbench package as specified in provided project description
 library(mlbench)
 
