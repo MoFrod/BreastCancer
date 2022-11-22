@@ -20,7 +20,7 @@ scale <- attr(xs, "scaled:scale")
 bc_data <- data.frame(xs, Class)
 
 # Conduct PCA
-pca <- prcomp(x=bc_data, scale=FALSE) # Already scaled
+pca <- prcomp(x=xs) # Already scaled, and excluding Class
 print(pca) # Print results
 summary(pca) # We need 6 PCAs to explain 0.93 of the variance, and 3 to explain 0.80.
 

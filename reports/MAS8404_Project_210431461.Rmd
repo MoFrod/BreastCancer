@@ -66,25 +66,6 @@ corrplot(cor_bc, order = "hclust", method = "circle", tl.col="black", tl.cex = 0
 
 In this plot, the correlation is more significant when the circle is both darker and larger. This plot confirms the strong linear relationship between CS and CSh, which suggests that any classifier is unlikely to need both characteristics. These characteristics also appear to have stronger relationships with CT, MA, E, BN, BC, and NN. M does not appear to have a significant correlation with any of the characteristics. These insights indicate that an accurate classifier may only need a selection of the predictor variables. 
 
-```{r general_variance, include=FALSE}
-# Sample variance of data
-s <- var(BC2)
-
-# Generalised variance 
-det(s) #55382860
-```
-
-```{r total_variation, include=FALSE}
-# Sample variance of data
-s <- var(BC2)
-
-# Calculate total variation
-s_sq = diag(s) # Extract diagonal elements
-
-(total_variation = sum(s_sq))
-#33283.24
-```
-
 Boxplots of each cytological characteristic are provided in `Appendix B`; these highlight that there is a distinctive difference between the characteristics of benign and malignant tissue. The mean, median and standard deviation (SD) of our data is, therefore, likely to be skewed unless the data is filtered by its Class (benign or malignant). The filtered summary statistics are presented in Table 1 on the next page.
 
 ```{r summary, include=FALSE}
@@ -118,15 +99,23 @@ kable(M_B, caption = "Summary Statistics by Class",  align = "c") %>%
 
 ```
 
-This table clearly demonstrates that there is a significant difference between the characteristics of benign and malignant tissue. This is especially true for CT, BN and BC, which suggests that they may be the most important predictor variables.
+This table clearly demonstrates that there is a significant difference between the characteristics of benign and malignant tissue. This is especially true for CT, BN and BC, which suggests that they may be the most important predictor variables. It is interesting that the SD of MA, BN and NN is noticeably larger than the other characteristics. If these characteristics are selected for the classifier, their variance may impact the accuracy of our classifier model.
 
-There are two single measures of multivariate scatter that help generalise how varied our data is; the generalised variance, which for our data is 55382860.00, and the total variation, which for our data is 33283.24. These large values tell us that there is a high degree of scatter about the sample means of each variable. This highlights that it will be important to transform our data to standardised it so that all the variables are put on a common scale. 
+```{r variation, include=FALSE}
+# Sample variance of data
+s <- var(BC2[,2:10]) # Removing Id and Class
 
-### Subset Selection
+# Calculate total variation
+s_sq = diag(s) # Extract diagonal elements
 
-The exploratory data analysis suggests that some predictor variables are likely to be better at predicting our response variable than others. If this proves to be correct, this will allow us to learn the effects of fewer predictor variables more precisely. 
+(total_variation = sum(s_sq))
+#70.7
 
-As our response variable is binary (benign or malignant), apply logistic regression is an appropriate approach to identify the best subset of predictor variables. After fitting the logistic regression model for `Class` to standardised data it is clear that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level.
+# Generalised variance 
+det(s) #47432
+```
+
+Given this, it is also important to explore how varied the data is for the cytological characteristics. There are two single measures of multivariate scatter that help us generalise this; these are the generalised variance, which for our data is 70.70, and the total variation, which for our data is 47432.00. The large values tell us that there is a high degree of scatter about the sample means of each variable. To aid our analysis, therefore, it may be beneficial to standardise our data, despite it being a common, discrete scale for all the cytological characteristics.
 
 ```{r standardise, include=FALSE}
 # Standardise the predictor variables 
@@ -141,6 +130,21 @@ scale <- attr(xs, "scaled:scale")
 # Reform the data frame
 bc_data <- data.frame(xs, Class)
 ```
+
+```{r pca, include=FALSE}
+# Conduct PCA
+pca <- prcomp(x=xs) # Already scaled, and excluding Class
+print(pca) # Print results
+summary(pca) # We need 6 PCAs to explain 0.93 of the variance, and 3 to explain 0.80.
+```
+
+To understand which characteristics most influence the variance, principal component analysis (PCA) was conducted. Three principal components account for 80.12% of the variance, and six account for 92.85% of the variance. The first principal component can be interpreted as an average measure of CS and CSh, which accounts for 65.60% of the variation. The second corresponds to M; together the first and second principal components account for 74.13% of the variation. The third principal component corresponds to CT. Although PCA is a distinct analysis from best subset selection, it is interesting to note that CS, CSh, M and CT are the principal components of our data.
+
+### Subset Selection
+
+The exploratory data analysis suggests that some predictor variables are likely to be better at predicting our response variable than others. If this proves to be correct, this will allow us to learn the effects of fewer predictor variables more precisely. 
+
+As our response variable is binary (benign or malignant), applying logistic regression is an appropriate approach to identify the best subset of predictor variables. After fitting the logistic regression model for `Class` to standardised data it is clear that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level.
 
 ```{r logfit, include=FALSE}
 # Store n and p
@@ -307,7 +311,7 @@ plot(lasso_train_cv_fit)
 #100
 
 # Extract corresponding mean MSE
-lasso_train_cv_fit$cvm[which_lambda_lasso] #0.004222146
+MSE <- lasso_train_cv_fit$cvm[which_lambda_lasso] #0.004222146
 
 ## Find the parameter estimates associated with optimal value of the tuning parameter
 coef(lasso_train_cv_fit, s=lambda_lasso_min)

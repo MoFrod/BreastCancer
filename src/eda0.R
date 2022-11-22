@@ -50,16 +50,16 @@ BC2 <- data.matrix(BC1) # Convert into numeric matrix
 heatmap(BC2[,-1]) # This doesn't tell us much more.
 
 # Sample variance of data
-s <- var(BC2)
+s <- var(BC2[,2:10])
 
 # Calculate total variation
 s_sq = diag(s) # Extract diagonal elements
 
 (total_variation = sum(s_sq))
-#33283.24
+#70.7
 
 # Generalised variance 
-det(s) #55382860
+det(s) #47432
 
 # GG density plots of variables
 BC1 %>%
