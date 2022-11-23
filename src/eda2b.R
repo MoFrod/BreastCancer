@@ -31,6 +31,44 @@ lasso_yhat = ifelse(lasso_phat > 0.5, 1, 0)
 #Calculate the training error
 1-mean(bc_data$Class==lasso_yhat) #0.02928258, 2.93%
 
+#LASSO w. 6 Predictor Variables
+
+# Extract the response variable
+yClass <- bc_data_red[,7]
+
+#Extract the predictor variables
+x1 <- bc_data_red[,1:6]
+
+#Fit a model with LASSO penalty for each value of the turning parameter, for all data
+lasso_fit_red = glmnet(x1, yClass, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
+
+# Examine the effect of the tuning parameter on the parameter estimates for all data
+plot(lasso_fit_red, xvar="lambda", col=rainbow(p), label=TRUE) 
+
+# Cross-validate LASSO for all data
+x1 <- as.matrix(x1)
+lasso_cv_fit_red = cv.glmnet(x1, yClass, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid, type.measure = "class")
+plot(lasso_cv_fit_red) # Plot cross-validation
+
+#Identify the optimal value for the turning parameter
+(lambda_lasso_min_red = lasso_cv_fit_red$lambda.min) #0.002104904
+(which_lambda_lasso_red = which(lasso_cv_fit_red$lambda == lambda_lasso_min_red)) #96
+
+#Find the parameter associated with the optimal value of the turning parameter
+coef(lasso_fit_red, s=lambda_lasso_min_red) # CT, BN, CB and CS are most incluencial.
+
+#Compute predicted probabilities
+lasso_phat_red = predict(lasso_fit_red, x1, s=lambda_lasso_min_red, type = "response")
+
+#Compute fitted (i.e. predicted) values
+lasso_yhat_red = ifelse(lasso_phat_red > 0.5, 1, 0)
+
+#Calculate confusion matrix
+(lasso_confusion_red = table(Observed=bc_data_red$Class, Predicted=lasso_yhat_red))
+
+#Calculate the training error
+1-mean(bc_data_red$Class==lasso_yhat_red) #0.02928258, 2.93%
+
 #LASSO w. SPLIT DATA
 
 ##Cross-validate LASSO for training data
@@ -42,8 +80,8 @@ plot(lasso_cv_fit_train) # Plot cross-validation
 (lambda_lasso_min_train = lasso_cv_fit_train$lambda.min) #0.01963041
 (which_lambda_lasso_train = which(lasso_cv_fit_train$lambda == lambda_lasso_min_train)) #84
 
-# Extract correspoding mean MSE
-MSE <- lasso_train_cv_fit$cvm[which_lambda_lasso] #0.0336585
+# Extract corresponding mean MSE
+MSE <- lasso_cv_fit_train$cvm[which_lambda_lasso_train] #0
 
 ##Fit a model with LASSO penalty for each value of the turning parameter to training data
 lasso_fit_train = glmnet(train, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = lambda_lasso_min_train)
