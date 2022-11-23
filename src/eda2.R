@@ -4,8 +4,8 @@ grid = 10^seq(5, -3, length = 100)
 #Fit a model with LASSO penalty for each value of the turning parameter
 lasso_fit_train = glmnet(train[,1:6], train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
 
-## Examine the effect of the tuning parameter on the parameter estimates
-plot(lasso_fit_train, xvar="lambda", col=rainbow(p), label=TRUE)
+# Examine the effect of the tuning parameter on the parameter estimates
+plot(lasso_fit_train, xvar="lambda", col=rainbow(p), label=TRUE, print.eval=TRUE)
 
 #Fit a model with LASSO penalty for each value of the turning parameter
 #lasso_fit = glmnet(bc_data_red[1:6], Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
@@ -62,7 +62,7 @@ plot(lasso_train_cv_fit)
 MSE <- lasso_train_cv_fit$cvm[which_lambda_lasso] #0.004222146
 
 ## Find the parameter estimates associated with optimal value of the tuning parameter
-coef(lasso_fit, s=lambda_lasso_min)
+coef(lasso_fit_train, s=lambda_lasso_min)
 
 #Fit a model with LASSO penalty for each value of the turning parameter
 lasso1_fit_train = glmnet(train, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
@@ -99,15 +99,22 @@ yhat_lasso_test = ifelse(lasso_test > 0.5, 1, 0)
 # Compute test error
 (1-mean(test$Class == yhat_lasso_test)) #0.2572263 25.72%
 
-# ROC plot
-#Re-add class into LASSO and lambda=MSE
-lasso2_fit_train = glmnet(train, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = lambda_lasso_min)
+# ROC - Not working
+lasso_test_roc <- roc(test$Class ~ lasso_test, plot = TRUE, print.auc = TRUE)
+
+# ROC plot Tests
+#Re-add class into LASSO
+lasso2_fit_train = glmnet(train, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = MSE)
 
 # Compute test error
-lasso_test2 = as.numeric(predict(lasso2_fit_train, test_l, type ="response")) 
+lasso_test2 = as.vector(predict(lasso2_fit_train, test_l, type ="response")) 
 yhat_lasso_test2 = ifelse(lasso_test2 > 0.5, 1, 0)
-lasso_test_roc <- roc(test$Class ~ lasso_test2, plot = TRUE, print.auc = TRUE)
 
+# Compute test error
+(1-mean(test$Class == yhat_lasso_test2))
+
+# ROC
+lasso_test_roc <- roc(test$Class ~ lasso_test2, plot = TRUE, print.auc = TRUE)
 
 # Cross-validation
 #(lasso_cv_fit = cv.glmnet(xs, Class, family="binomial", alpha=1, standardize=FALSE, lambda=grid, type.measure="class"))

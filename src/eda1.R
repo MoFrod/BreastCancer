@@ -179,6 +179,17 @@ t(apply(confusion_2, 1, normalise)) # Performance is okay.
 # ROC plot
 logr_test_roc <- roc(test$Class ~ logr_test, plot = TRUE, print.auc = TRUE)
 
+# Evaluate the model
+pred.logr <- prediction(logr_test, test$Class)
+roc.perf.logr = performance(pred.logr, measure = "tpr", x.measure = "fpr")
+auc.train.logr <- performance(pred.logr, measure = "auc")
+auc.train.logr <- auc.train.logr@y.values
+
+# Plot LASSO on ROC
+plot(roc.perf.logr, col="#1f78b4", main="Plot : LOGISTIC REGRESSION ROC", cex.main=0.8)
+abline(a=0, b= 1)
+text(x = .25, y = .65, paste("AUC = ", round(auc.train.logr[[1]],3), sep = ""))
+
 # Cross validation
 
 costfunc  <- function(obs, pred.p){

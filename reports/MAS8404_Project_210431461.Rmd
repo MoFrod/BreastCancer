@@ -156,10 +156,32 @@ p <- ncol(bc_data)- 1
 
 # Summarise the model fit
 summary(logr_fit) 
-
 ```
 
-To confirm how many predictor variables would be the best subset selection, the Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are applied. The results are presented in the two plots below.
+This result is broadly aligned to the variable selection performed by a LASSO regression. In the plot below, the last five variables to drop out are BN, CSh, CS, CT and NN; apart from CS, these predictor variables align with the results of the previous logistic regression. In the LASSO model, all the predictor values are retained as parameter estimates associated with the optimal value of the tuning parameter. These estimates highlight that CT, BN, CSh, BC, MA, and NN are the least shrunk towards zero and, therefore the most influential.
+
+```{r full_lasso, echo=FALSE}
+# Choose grid of values for the turning parameter
+grid = 10^seq(5, -3, length = 100)
+
+#Fit a model with LASSO penalty for each value of the turning parameter, for all data
+lasso_fit = glmnet(xs, bc_data$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
+
+# Examine the effect of the tuning parameter on the parameter estimates for all data
+plot(lasso_fit, xvar="lambda", col=rainbow(p), label=TRUE, main="Plot 3: Effect of the Tuning Parameter on Parameter Estimates", cex.main=0.8)
+
+# Cross-validate LASSO for all data
+lasso_cv_fit = cv.glmnet(xs, bc_data$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid, type.measure = "class")
+
+#Identify the optimal value for the turning parameter
+lambda_lasso_min = lasso_cv_fit$lambda.min #0.007742637
+which_lambda_lasso = which(lasso_cv_fit$lambda == lambda_lasso_min) #89
+
+#Find the parameter associated with the optimal value of the turning parameter
+optimal <- coef(lasso_fit, s=lambda_lasso_min)
+```
+
+To confirm how many predictor variables would be the best subset selection, the Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are applied. The results are presented in the two plots on the next page.
 
 ```{r bss, echo=FALSE, message=FALSE, warning=FALSE}
 # Apply best subset selection
@@ -174,14 +196,14 @@ best_BIC = fit_BIC$ModelReport$Bestk
 par(mfrow=c(1,2))
 
 # Produce plots, highlighting optimal value of 'k'
-plot(0:p, fit_AIC$Subsets$AIC, xlab = "Number of Predictors", ylab = "AIC", type = "b", main = "Plot 3: AIC Selection", cex.main=0.8)
+plot(0:p, fit_AIC$Subsets$AIC, xlab = "Number of Predictors", ylab = "AIC", type = "b", main = "Plot 4: AIC Selection", cex.main=0.8)
 points(best_AIC, fit_AIC$Subsets$AIC[best_AIC+1], col="#1f78b4", pch=16)
 
-plot(0:p, fit_BIC$Subsets$BIC, xlab = "Number of Predictors", ylab = "BIC", type = "b", main="Plot 4: BIC Selection", cex.main=0.8)
+plot(0:p, fit_BIC$Subsets$BIC, xlab = "Number of Predictors", ylab = "BIC", type = "b", main="Plot 5: BIC Selection", cex.main=0.8)
 points(best_BIC, fit_BIC$Subsets$BIC[best_BIC+1], col="#1f78b4", pch=16)
 ```
 
-In both plots, the blue dot is number of predictor variables identified by the best subset selection approach. It appears that a model with six variables is likely to be a good compromise between five and seven. The cytological characteristics for these six variables are CT, CSh, MA, BN, BC, and NN. These align closely to the strongly correlated variables identified in our correlation matrix above.
+In both plots, the blue dot is number of predictor variables identified by the best subset selection approach. It appears that a model with six variables is likely to be a good compromise between five and seven. As determined by the logistic regression subset selection, the cytological characteristics for these six variables are CT, CSh, MA, BN, BC, and NN. These align closely to the strongly correlated variables identified in our correlation matrix above.
 
 ```{r six, include=FALSE}
 # It seems like the model with 6 predictors is a good compromise between 5 and 7 
@@ -273,70 +295,65 @@ With 'in-sample validation', the training error is 2.02%. This is not very inter
 The accuracy of our model is visualised by the Receiver Operating Characteristic (ROC) curve below. 
 
 ```{r log_roc, echo=FALSE, message=FALSE, warning=FALSE}
-# ROC plot of logistic regression
-logr_test_roc <- roc(test$Class ~ logr_test, plot = TRUE, print.auc = TRUE, main="Plot 5: Logistic Regression ROC", cex.main=0.8, col="#1f78b4")
+# Evaluate the model
+pred.logr <- prediction(logr_test, test$Class)
+roc.perf.logr = performance(pred.logr, measure = "tpr", x.measure = "fpr")
+auc.train.logr <- performance(pred.logr, measure = "auc")
+auc.train.logr <- auc.train.logr@y.values
+
+# Plot LASSO on ROC
+plot(roc.perf.logr, col="#1f78b4", main="Plot 6: Logisitic Regresion ROC", cex.main=0.8)
+abline(a=0, b= 1)
+text(x = .25, y = .65, paste("AUC = ", round(auc.train.logr[[1]],3), sep = ""))
 ```
 
-The measure of accuracy is the area under the ROC curve. This curve is far from the diagonal and is quite close to the perfect accuracy area of 1.00. Helpfully, the plot specifies the accuracy of our model as 0.99.
+The measure of accuracy is the area under the ROC curve. This curve is far from the diagonal and is quite close to the perfect accuracy area of 1.00. Helpfully, the plot specifies the accuracy of our model as 0.985.
 
 *LASSO Regression*
 
 Regularisation methods, such as LASSO, are shrinkage methods; they work to minimise the loss function and shrink the maximum likelihood estimates of regression coefficients to zero. LASSO performs subset selection in addition to shrinkage; given that the test error was higher than the training error for logistic regression, this method is selected over ridge regression. The LASSO regression applied to the same training data as above is visualised below.
 
 ```{r LASSO, echo=FALSE}
-# Choose grid of values for the turning parameter
-grid = 10^seq(5, -3, length = 100)
+#Cross-validate LASSO for training data
+train_l = as.matrix(train) #Covert to matrix for cv
+lasso_cv_fit_train = cv.glmnet(train_l, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid, type.measure = "class")
+plot(lasso_cv_fit_train, main = "Plot 7: LASSO Regression Cross-Validation Scores", cex.main=0.8, mar=c(3, 2, 2, 0)) # Plot cross-validation
 
-#Fit a model with LASSO penalty for each value of the turning parameter
-lasso_fit_train = glmnet(train[,1:6], train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
+##Identify the optimal value for the turning parameter
+lambda_lasso_min_train = lasso_cv_fit_train$lambda.min #0.01963041
+which_lambda_lasso_train = which(lasso_cv_fit_train$lambda == lambda_lasso_min_train) #84
 
-## Examine the effect of the tuning parameter on the parameter estimates
-plot(lasso_fit_train, xvar="lambda", col=rainbow(p), label=TRUE, main = "Plot 6: LASSO Regression", cex.main=0.8, mar=c(3, 2, 2, 0))
+# Extract correspoding mean MSE
+MSE <- lasso_cv_fit_train$cvm[which_lambda_lasso] #0
+
+#Fit a model with LASSO penalty for each value of the turning parameter to training data
+lasso_fit_train = glmnet(train, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = lambda_lasso_min_train)
+
+#Compute fitted values for the validation data
+test_l <- as.matrix(test) #Test data as matrix
+lasso_phat_test.n = as.numeric(predict(lasso_fit_train, test_l, s=lambda_lasso_min_train, type="response"))
+lasso_yhat_test.n = ifelse(lasso_phat_test.n > 0.5, 1, 0)
+
+#Compute test error
+1-mean(test$Class == lasso_yhat_test.n) #0%
+1-mean(test_l == lasso_yhat_test.n) #0.8571429. If i change to test_l[,7] it goes back to zero.
 ```
 
-This plot presents the coefficients of the LASSO regression and the effect of the turning parameter when applying LASSO to our training data set. It shows us that the third variable, MA (green), is the first to drop out of the model, followed by our 6th variable, NN (blue), and so on. 
+This plot presents the cross-validation scores for cytological characteristics. [For each value of lambda, the mean MSE across the k folds is plotted alogn with error bars which cover the mean plus or minus one standard error.0
 
-To choose an appropriate value for the turning parameter of LASSO, 10-fold cross-validation is used. This allows the optimal turning parameter and mean MSE to be calculated, which are 0.001 and 0.004222146, respectively. The regression coefficients obtained by performing the LASSO with the optimal turning parameter are shown in the table below.
+To choose an appropriate value for the turning parameter of LASSO, 10-fold cross-validation is used. This allows the optimal turning parameter and mean MSE to be calculated, which are 0.01963041 and 0, respectively. [UPDATE: The regression coefficients obtained by performing the LASSO with the optimal turning parameter are shown in the table below. - Optimal or optimal train?!]
 
-```{r MSE, include=FALSE}
-# Cross-validation
-train_l <- as.matrix(train)
-lasso_train_cv_fit = cv.glmnet(train_l, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
-plot(lasso_train_cv_fit)
-
-## Identify the optimal value for the tuning parameter
-(lambda_lasso_min = lasso_train_cv_fit$lambda.min)
-# 0.001
-(which_lambda_lasso = which(lasso_train_cv_fit$lambda == lambda_lasso_min))
-#100
-
-# Extract corresponding mean MSE
-MSE <- lasso_train_cv_fit$cvm[which_lambda_lasso] #0.004222146
-
-## Find the parameter estimates associated with optimal value of the tuning parameter
-coef(lasso_train_cv_fit, s=lambda_lasso_min)
+```{r lasso_coefficients, include=FALSE}
 
 # Create table
-lasso_coefficients <- tribble(~"", ~"Intercept", ~"CT", ~"CSh", ~"MA", ~"BN", ~"BC", ~"NN", "Estimates", -5.43, 0.35, 0.52, 0.15, 0.60, 0.25, 0.17)
+lasso_coefficients <- tribble(~"", ~"Intercept", ~"CT", ~"CSh", ~"MA", ~"BN", ~"BC", ~"NN", "Estimates", 1.12, 0.35, 0.52, 0.15, 0.60, 0.25, 0.17)
 
 # Improve visuals
 kable(lasso_coefficients, caption = "Estimates of Regression Coefficients for Logistic Regression") %>%
   kable_classic_2(full_width = F, latex_options = "HOLD_position")
 ```
-```{r lasso_test, include=FALSE}
-# Calculate Test error
-#Fit a model with LASSO penalty for each value of the turning parameter
-lasso1_fit_train = glmnet(train, train$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
-# Compute test error
-test_l <- as.matrix(test)
-lasso_test = predict(lasso1_fit_train, test_l, type ="response") 
-yhat_lasso_test = ifelse(lasso_test > 0.5, 1, 0)
 
-# Compute test error
-(1-mean(test$Class == yhat_lasso_test)) #0.2572263 25.72%
-```
-
-When using our train and test data sets for out-of-sample validation, the test error is 25.75%, so significantly higher than the logistic regression.
+When using our train and test data sets for out-of-sample validation, the test error is 0%, [Something is wrong with code]
 
 *Discriminant Analysis*
 
@@ -379,7 +396,41 @@ yhat_test = qda_test$class
 
 When using our train and test data sets for out-of-sample validation, the test error for LDA is 7.30% and QDA is 6.57%. As expected QDA has the lower test error. 
 
-### Evaluation
+```{r lda_ROC, echo=FALSE}
+# Get the posteriors as a dataframe.
+lda.predict.posteriors <- as.data.frame(lda_test$posterior)
+
+# Evaluate the model
+pred.lda <- prediction(lda.predict.posteriors[,2], test$Class)
+roc.perf.lda = performance(pred.lda, measure = "tpr", x.measure = "fpr")
+auc.train.lda <- performance(pred.lda, measure = "auc")
+auc.train.lda <- auc.train.lda@y.values
+# Plot
+plot(roc.perf.lda, col="#1f78b4", main="Plot 8: LDA ROC", cex.main=0.8)
+abline(a=0, b= 1)
+text(x = .25, y = .65, paste("AUC = ", round(auc.train.lda[[1]],3), sep = ""))
+```
+
+```{r qda_ROC, echo=FALSE}
+## Get the posteriors as a dataframe
+qda.predict.posteriors <- as.data.frame(qda_test$posterior)
+
+## Evaluate the model
+pred.qda <- prediction(qda.predict.posteriors[,2], test$Class)
+roc.perf.qda = performance(pred.qda, measure = "tpr", x.measure = "fpr")
+auc.train.qda <- performance(pred.qda, measure = "auc")
+auc.train.qda <- auc.train.qda@y.values
+
+# Plot QDA on ROC
+plot(roc.perf.qda, col="#1f78b4", main="Plot : QDA ROC", cex.main=0.8)
+abline(a=0, b= 1)
+text(x = .25, y = .65, paste("AUC = ", round(auc.train.qda[[1]],3), sep = ""))
+```
+
+[DISCUSS ROC graphs]
+
+
+### Evaluation {UPDATE}
 
 Based on the predictive performance of the three models applied, the logistic regression has the lowest test error at 5.85%. It if followed by QDA (6.57%), LDA (7.30%) and, lastly, the LASSO regression with a test error of 25.75%. I had hoped to be able to compare all the models with ROC plots, and unfortunately there was an issue with the code for LASSO and the decriminant analyses. Smaller test errors indicate more accurate models, so our logistic regression would be the best classifier. 
 
