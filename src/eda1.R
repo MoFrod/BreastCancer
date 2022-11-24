@@ -185,7 +185,7 @@ roc.perf.logr = performance(pred.logr, measure = "tpr", x.measure = "fpr")
 auc.train.logr <- performance(pred.logr, measure = "auc")
 auc.train.logr <- auc.train.logr@y.values
 
-# Plot LASSO on ROC
+# Plot LOGR on ROC
 plot(roc.perf.logr, col="#1f78b4", main="Plot : LOGISTIC REGRESSION ROC", cex.main=0.8)
 abline(a=0, b= 1)
 text(x = .25, y = .65, paste("AUC = ", round(auc.train.logr[[1]],3), sep = ""))

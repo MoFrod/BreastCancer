@@ -50,9 +50,9 @@ x <- BC2[,2:10]
 pairs(x, col=c("black", "#1f78b4")[Class+1], main="Plot 1: Scatter Plot Matrix of All Cytological Characteristics")
 ```
 
-This plot visualises the relationship between the characteristics; it suggests that there is a strong linear relationship between CS and CSh, indicating that larger cells have a more significant shape and more are likely to be malignant. There also appears to be a weak linear relationship between CS and CSh with E and BC, as well as a weak linear relationship between CT and CSh. Further investigation of these relationships would be beneficial. 
+This plot visualises the relationship between the characteristics; it suggests that there is a strong linear relationship between CS and CSh, indicating that larger cells have a more significant shape and more are likely to be malignant. There also appears to be a weak linear relationship between CS and CSh with E and BC, as well as a weak linear relationship between CT and CSh. Further investigation of these relationships would be beneficial. The correlations between other characteristics are not initially obvious and require deeper analysis. 
 
-The correlations between other characteristics are not initially obvious and require deeper analysis. A sample correlation matrix quantifies the strength of the linear relationship and, for all characteristics, is visualised by the correlation plot below.
+This is achieved by a sample correlation matrix, which quantifies the strength of the linear relationship.The correlation between all characteristics is visualised by the correlation plot below:
 
 ```{r summmary_cor, echo=FALSE, fig.width=5, fig.height=5, fig.align='center'}
 # Observe the correlations
@@ -64,7 +64,7 @@ corrplot(cor_bc, order = "hclust", method = "circle", tl.col="black", tl.cex = 0
 
 \vspace{-1.5cm}
 
-In this plot, the correlation is more significant when the circle is both darker and larger. This plot confirms the strong linear relationship between CS and CSh, which suggests that any classifier is unlikely to need both characteristics. These characteristics also appear to have stronger relationships with CT, MA, E, BN, BC, and NN. M does not appear to have a significant correlation with any of the characteristics. These insights indicate that an accurate classifier may only need a selection of the predictor variables. 
+In this plot, the correlation is more significant when the circle is both darker and larger. The plot confirms the strong linear relationship between CS and CSh, which suggests that any classifier is unlikely to need both characteristics. These characteristics also appear to have stronger relationships with CT, MA, E, BN, BC, and NN. M does not appear to have a significant correlation with any of the characteristics. These insights indicate that an accurate classifier may only need a selection of the predictor variables. 
 
 Boxplots of each cytological characteristic are provided in `Appendix B`; these highlight that there is a distinctive difference between the characteristics of benign and malignant tissue. The mean, median and standard deviation (SD) of our data is, therefore, likely to be skewed unless the data is filtered by its Class (benign or malignant). The filtered summary statistics are presented in Table 1 on the next page.
 
@@ -115,7 +115,7 @@ s_sq = diag(s) # Extract diagonal elements
 det(s) #47432
 ```
 
-Given this, it is also important to explore how varied the data is for the cytological characteristics. There are two single measures of multivariate scatter that help us generalise this; these are the generalised variance, which for our data is 70.70, and the total variation, which for our data is 47432.00. The large values tell us that there is a high degree of scatter about the sample means of each variable. To aid our analysis, therefore, it may be beneficial to standardise our data, despite it being a common, discrete scale for all the cytological characteristics.
+Given this, it is also important to explore how varied the data is for the cytological characteristics. There are two single measures of multivariate scatter that help us generalise this; these are the generalised variance, which for our data is 70.70, and the total variation, which for our data is 47432.00. The large values tell us that there is a high degree of scatter about the sample means of each variable. Although the data for all cytological characteristics is a common, discrete scale it may be beneficial to standardise our data so that it is centred.
 
 ```{r standardise, include=FALSE}
 # Standardise the predictor variables 
@@ -138,13 +138,13 @@ print(pca) # Print results
 summary(pca) # We need 6 PCAs to explain 0.93 of the variance, and 3 to explain 0.80.
 ```
 
-To understand which characteristics most influence the variance, principal component analysis (PCA) was conducted. Three principal components account for 80.12% of the variance, and six account for 92.85% of the variance. The first principal component can be interpreted as an average measure of CS and CSh, which accounts for 65.60% of the variation. The second corresponds to M; together the first and second principal components account for 74.13% of the variation. The third principal component corresponds to CT. Although PCA is a distinct analysis from best subset selection, it is interesting to note that CS, CSh, M and CT are the principal components of our data.
+To understand which characteristics most influence the variance, principal component analysis (PCA) was conducted. Three principal components account for 80.12% of the variance, and six account for 92.85% of the variance. The first principal component can be interpreted as an average measure of CS and CSh, which accounts for 65.60% of the variation. The second corresponds to M; together the first and second principal components account for 74.13% of the variation. The third principal component corresponds to CT. Although PCA is a distinct from best subset selection, it is interesting to note that CS, CSh, M and CT are the principal components of our data.
 
 ### Subset Selection
 
 The exploratory data analysis suggests that some predictor variables are likely to be better at predicting our response variable than others. If this proves to be correct, this will allow us to learn the effects of fewer predictor variables more precisely. 
 
-As our response variable is binary (benign or malignant), applying logistic regression is an appropriate approach to identify the best subset of predictor variables. After fitting the logistic regression model for `Class` to standardised data it is clear that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level.
+As our response variable is binary (benign or malignant), applying logistic regression is an appropriate approach to identify the best subset of predictor variables. After fitting the logistic regression model for `Class` to standardised data it is clear that CT, BN, MA and BC have a coefficient which is significantly different to zero when testing at the 5% level. This suggests that these characteristics will most contribute towards the classifier model.
 
 ```{r logfit, include=FALSE}
 # Store n and p
@@ -158,9 +158,9 @@ p <- ncol(bc_data)- 1
 summary(logr_fit) 
 ```
 
-This result is broadly aligned to the variable selection performed by a LASSO regression. In the plot below, the last five variables to drop out are BN, CSh, CS, CT and NN; apart from CS, these predictor variables align with the results of the previous logistic regression. In the LASSO model, all the predictor values are retained as parameter estimates associated with the optimal value of the tuning parameter. These estimates highlight that CT, BN, CSh, BC, MA, and NN are the least shrunk towards zero and, therefore the most influential.
+This result is broadly aligned to the variable selection performed by a LASSO regression. In the plot below, the last five variables to drop out are BN, CSh, CS, CT and NN; apart from CS, these predictor variables align with the results of the previous logistic regression. In the LASSO model, all the predictor values are retained as parameter estimates associated with the optimal value of the tuning parameter. These estimates highlight that CT, BN, CSh, BC, MA, and NN are the least shrunk towards zero and, therefore contribute the most.
 
-```{r full_lasso, echo=FALSE}
+```{r full_lasso, echo=FALSE, fig.height=4.5}
 # Choose grid of values for the turning parameter
 grid = 10^seq(5, -3, length = 100)
 
@@ -168,7 +168,7 @@ grid = 10^seq(5, -3, length = 100)
 lasso_fit = glmnet(xs, bc_data$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid)
 
 # Examine the effect of the tuning parameter on the parameter estimates for all data
-plot(lasso_fit, xvar="lambda", col=rainbow(p), label=TRUE, main="Plot 3: Effect of the Tuning Parameter on Parameter Estimates", cex.main=0.8)
+plot(lasso_fit, xvar="lambda", col=rainbow(p), label=TRUE, main="Plot 3: Effect of the Tuning Parameter on Parameter Estimates", cex.main=0.8, mar=c(3, 2, 2, 0))
 
 # Cross-validate LASSO for all data
 lasso_cv_fit = cv.glmnet(xs, bc_data$Class, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid, type.measure = "class")
@@ -183,7 +183,7 @@ optimal <- coef(lasso_fit, s=lambda_lasso_min)
 
 To confirm how many predictor variables would be the best subset selection, the Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are applied. The results are presented in the two plots on the next page.
 
-```{r bss, echo=FALSE, message=FALSE, warning=FALSE}
+```{r bss, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.5}
 # Apply best subset selection
 fit_AIC <- bestglm(bc_data, family = binomial, IC="AIC")
 fit_BIC <- bestglm(bc_data, family = binomial, IC="BIC")
@@ -203,7 +203,7 @@ plot(0:p, fit_BIC$Subsets$BIC, xlab = "Number of Predictors", ylab = "BIC", type
 points(best_BIC, fit_BIC$Subsets$BIC[best_BIC+1], col="#1f78b4", pch=16)
 ```
 
-In both plots, the blue dot is number of predictor variables identified by the best subset selection approach. It appears that a model with six variables is likely to be a good compromise between five and seven. As determined by the logistic regression subset selection, the cytological characteristics for these six variables are CT, CSh, MA, BN, BC, and NN. These align closely to the strongly correlated variables identified in our correlation matrix above.
+In both plots, the blue dot is the number of predictor variables identified by the subset selection approach. It appears that a model with six variables is likely to be a good compromise between five and seven. The logistic regression subset selection determined that the cytological characteristics for these six variables are CT, CSh, MA, BN, BC, and NN. These align closely to the strongly correlated variables identified in our correlation matrix above.
 
 ```{r six, include=FALSE}
 # It seems like the model with 6 predictors is a good compromise between 5 and 7 
@@ -215,7 +215,7 @@ fit_AIC$Subsets[pstar+1,]
 
 ### Modelling
 
-To increase the reliability of our approach, the data is divided in two to allow for out-of-sample validation. In this project, 80% of the data is randomly allocated to a training data set to construct our classifier, with the remaining 20% becoming the testing data set to compute our test errors. 
+To increase the reliability of our approach towards building a classifier, the data is divided in two to allow for out-of-sample validation. In this project, 80% of the data is randomly allocated to a training data set to construct our classifier, with the remaining 20% becoming the testing data set to compute our test errors. The same test and train data sets are used for all the approaches in this section.
 
 ```{r train, include=FALSE}
 # Construct a reduced data set containing only the selected predictors
@@ -281,7 +281,7 @@ yhat_logr_test = ifelse(logr_test > 0.5, 1, 0)
 t(apply(confusion_2, 1, normalise)) # Performance is okay.
 
 # Compute test error
-(1-mean(test$Class == yhat_logr_test)) #0.05847953 (5.84%)
+(1-mean(test$Class == yhat_logr_test)) #0.05847953 (5.85%)
 
 #Compute the confusion matrix
 (confusion_2 <- table(Observed=test$Class, predicted=yhat_logr_test))
@@ -290,28 +290,28 @@ t(apply(confusion_2, 1, normalise)) # Performance is okay.
 t(apply(confusion_2, 1, normalise)) # Performance is okay.
 ```
 
-With 'in-sample validation', the training error is 2.02%. This is not very interesting as only the test error measures how well the method performs on previously unseen data (@Project). When using our train and test data sets for out-of-sample validation, the test error is 5.85%. This is slightly larger than the training error, which may indicate that unnecessary predictor variables have been included. 
+With 'in-sample validation', the training error is 2.02%. This is not very interesting as only the test error measures how well the method performs on previously unseen data (@Project). When using our train and test data sets for out-of-sample validation, the test error is 5.85%. This is slightly larger than the training error, which may indicate that the number of predictor variables included may benefit from being adjusted 
 
-The accuracy of our model is visualised by the Receiver Operating Characteristic (ROC) curve below. 
+A helpful way to fairly compare our models is the Receiver Operating Characteristic (ROC) curve; this plot shows the performance of our classification model at different classification thresholds (@ROC). It is visualised below: 
 
-```{r log_roc, echo=FALSE, message=FALSE, warning=FALSE}
+```{r log_roc, echo=FALSE, message=FALSE, warning=FALSE, fig.height=4}
 # Evaluate the model
 pred.logr <- prediction(logr_test, test$Class)
 roc.perf.logr = performance(pred.logr, measure = "tpr", x.measure = "fpr")
 auc.train.logr <- performance(pred.logr, measure = "auc")
 auc.train.logr <- auc.train.logr@y.values
 
-# Plot LASSO on ROC
+# Plot logr on ROC
 plot(roc.perf.logr, col="#1f78b4", main="Plot 6: Logisitic Regresion ROC", cex.main=0.8)
 abline(a=0, b= 1)
 text(x = .25, y = .65, paste("AUC = ", round(auc.train.logr[[1]],3), sep = ""))
 ```
 
-The measure of accuracy is the area under the ROC curve. This curve is far from the diagonal and is quite close to the perfect accuracy area of 1.00. Helpfully, the plot specifies the accuracy of our model as 0.985.
+The measure of accuracy is the area under the ROC curve (AUC), which provides an aggregate measure of performance (@ROC). This curve is far from the diagonal and is quite close to the perfect accuracy area of 1.00. Helpfully, the plot specifies the accuracy of our model as 0.985, and this indicates the performance quite good.
 
 *LASSO Regression*
 
-Regularisation methods, such as LASSO, are shrinkage methods; they work to minimise the loss function and shrink the maximum likelihood estimates of regression coefficients to zero. LASSO performs subset selection in addition to shrinkage; given that the test error was higher than the training error for logistic regression, this method is selected over ridge regression. The cross-validation scores of the LASSO regression applied to the same data as above is visualised below.
+Regularisation methods, such as LASSO, are shrinkage methods; they work to minimise the loss function and shrink the maximum likelihood estimates of regression coefficients to zero. LASSO performs subset selection in addition to shrinkage; given that the test error was higher than the training error for logistic regression, this method is selected over ridge regression. The cross-validation scores of the LASSO regression applied to the same data as above is visualised below:
 
 ```{r LASSOcv, echo=FALSE, message=FALSE, warning=FALSE}
 # Extract the response variable
@@ -326,8 +326,6 @@ lasso_cv_fit_train = cv.glmnet(train_l, tClass, family = "binomial", alpha = 1, 
 plot(lasso_cv_fit_train, main = "Plot 7: LASSO Regression Cross-Validation Scores", cex.main=0.8, mar=c(3, 2, 2, 0)) # Plot cross-validation
 
 ```
-
-For each value of lambda, this plot shows us the mean MSE across the k folds with error bars which cover the mean plus or minus one standard error. [What does this show us?]
 
 ```{r LASSO, include = FALSE}
 
@@ -350,9 +348,10 @@ lasso_yhat_test = ifelse(lasso_phat_test > 0.5, 1, 0)
 ##Compute test error
 1-mean(test$Class == lasso_yhat_test) #0.05839416, 5.84%
 ```
-To choose an appropriate value for the turning parameter of LASSO, 10-fold cross-validation is used. This allows the optimal turning parameter and mean MSE to be calculated, which are 0.002104904 and 0.02380952, respectively. The regression coefficients obtained by performing the LASSO with the optimal turning parameter are shown in the table below.
 
-```{r lasso_coefficients, include=FALSE}
+For each value of $\lambda$, this plot shows us the mean squared error (MSE) across the default 10 *k*-folds. The grey bars at each point show the mean plus or minus one standard error. The first dashed line shows us the location of the minimum $\lambda$, and the second shows the optimal value for $\lambda$. The minimum for our data the minimum is 0.00210490 and the MSE is 0.02380952. The regression coefficients obtained by performing the LASSO with the optimal turning parameter are shown in the table below:
+
+```{r lasso_coefficients, echo=FALSE}
 # Find the parameter estimates associated with optimal value of the tuning parameter
 optimal_train <- coef(lasso_fit_train, s=lambda_lasso_min_train)
 
@@ -360,15 +359,15 @@ optimal_train <- coef(lasso_fit_train, s=lambda_lasso_min_train)
 lasso_coefficients <- tribble(~"", ~"Intercept", ~"CT", ~"CSh", ~"MA", ~"BN", ~"BC", ~"NN", "Estimates", -1.07, 1.71, 1.07, 1.11, 1.52, 1.25, 0.746)
 
 # Improve visuals
-kable(lasso_coefficients, caption = "Estimates of Regression Coefficients for Logistic Regression") %>%
+kable(lasso_coefficients, caption = "Estimates of Regression Coefficients for LASSO Regression") %>%
   kable_classic_2(full_width = F, latex_options = "HOLD_position")
 ```
 
-When using our train and test data sets for out-of-sample validation, the test error is 5.85%. This is the same test error as the logistic regression. The full test error value for the logistic regression is 0.05847953 and, for the LASSO regression, it is 0.05839416. This shows us that the LASSO model is very slightly more accuracte.
+When using our train and test data sets for out-of-sample validation, the test error is 5.85%. This is the same test error as the logistic regression. The full test error value for the logistic regression is 0.05847953 and, for the LASSO regression, it is 0.05839416. This shows us that the LASSO model is very slightly more accurate.
 
-The accuracy of our model is also visualised by the ROC curve below. 
+The accuracy of our model is also visualised by the ROC curve on the next page. 
 
-```{r lasso_ROC, echo=FALSE}
+```{r lasso_ROC, echo=FALSE, fig.height=4}
 ## Evaluate the model
 lasso_phat_test = predict(lasso_fit_train, test_l, s=lambda_lasso_min_train, type="response") 
 pred.lasso <- prediction(lasso_phat_test, test$Class)
@@ -382,13 +381,13 @@ abline(a=0, b= 1)
 text(x = .25, y = .65, paste("AUC = ", round(auc.train.lasso[[1]],3), sep = ""))
 ```
 
-The measure of accuracy is the area under the ROC curve. This curve is far from the diagonal and is quite close to the perfect accuracy area of 1.00. Helpfully, the plot specifies the accuracy of our model as 0.985.
+Again, this plot indicates the performance of our model is quite good; the accuracy of our model is 0.985 - the same as that for the logistic regression. 
 
 *Discriminant Analysis*
 
-Discriminant analysis is a technique used to classify observations into groups that do not overlap. Linear Discriminant Analysis (LDA) assumes that the common covariance matrix of the predictor variables is the same. Quadratic Discriminant Analysis (QDA) does not assume this. However, in practice, whether the common covariance is generally unknown. 
+Discriminant analysis is a technique used to classify observations into groups that do not overlap (@LDA). Linear Discriminant Analysis (LDA) assumes that the common covariance matrix of the predictor variables is the same. Quadratic Discriminant Analysis (QDA) does not assume this. However, in practice, whether the common covariance is generally unknown. 
 
-The density distributions in `Appendix A` and boxplots in `Appendix B` suggest that our data is not normally distributed and indicates non-equal variances (respectively). QDA is likely to be more appropriate than LDA. The group means generated by both LDA and QDA are the same, and so only one version of the group means is presented in the table on the next page.
+The density distributions in `Appendix A` and boxplots in `Appendix B` suggest that our data is not normally distributed and indicates non-equal variances (respectively). QDA is likely to be more appropriate than LDA. The group means generated by both LDA and QDA are the same, and so only one version of the group means is presented in the table below:
 
 ```{r groupmeans, echo=FALSE}
 # Perform LDA 
@@ -425,9 +424,9 @@ yhat_test = qda_test$class
 
 When using our train and test data sets for out-of-sample validation, the test error for LDA is 7.30% and QDA is 6.57%. As expected QDA has the lower test error. 
 
-The accuracy of our LDA model is visualised by the ROC curve below. 
+The accuracy of our LDA model is 0.984; it is visualised by the ROC curve on the next page. 
 
-```{r lda_ROC, echo=FALSE}
+```{r lda_ROC, echo=FALSE, fig.height=4}
 # Get the posteriors as a dataframe.
 lda.predict.posteriors <- as.data.frame(lda_test$posterior)
 
@@ -442,11 +441,9 @@ abline(a=0, b= 1)
 text(x = .25, y = .65, paste("AUC = ", round(auc.train.lda[[1]],3), sep = ""))
 ```
 
-The measure of accuracy is the area under the ROC curve and the accuracy of our model is 0.984.
+The accuracy of our QDA model 0.987 and is visualised by the ROC curve below:
 
-The accuracy of our QDA model is visualised by the ROC curve below.
-
-```{r qda_ROC, echo=FALSE}
+```{r qda_ROC, echo=FALSE, fig.height=4}
 ## Get the posteriors as a dataframe
 qda.predict.posteriors <- as.data.frame(qda_test$posterior)
 
@@ -462,20 +459,18 @@ abline(a=0, b= 1)
 text(x = .25, y = .65, paste("AUC = ", round(auc.train.qda[[1]],3), sep = ""))
 ```
 
-The measure of accuracy is the area under the ROC curve and the accuracy of our model is 0.987. Interestingly, the ROC curve suggests the QDA model is the most accuracte despite its test error being larger than that of the logistic or LASSO regressions.
+Interestingly, the ROC curve suggests the QDA model is the most accurate despite. As its test error is larger than either of the regression this warrants further investigation.
 
 
-### Evaluation {UPDATE}
+### Evaluation
 
-Based on the predictive performance of the three models applied, the logistic regression has the lowest test error at 5.85%. It if followed by QDA (6.57%), LDA (7.30%) and, lastly, the LASSO regression with a test error of 25.75%. I had hoped to be able to compare all the models with ROC plots, and unfortunately there was an issue with the code for LASSO and the decriminant analyses. Smaller test errors indicate more accurate models, so our logistic regression would be the best classifier. 
+Based on the predictive performance of the models, the LASSO regression has the lowest test error of 0.05839416. This is almost negligibly smaller than the logistic regression as both test errors round to 5.85%. These are followed by QDA (6.57%) and LDA (7.30%). The validation set approach (splitting the data into two) was applied to fairly assess and compare the supervised learning techniques. As smaller test errors indicate more accurate models, the findings outlined by this report suggest that the LASSO regression would be the best classifier. 
 
-Our best classifier does not include all nine cytological characteristics. Using the methods of AIC and BIC for best subset selection, it was determined that six predictor variables was likely to provide the most accurate model. There were: CT, CSh, MA, BN, BC, and NN.
+The ROC curves and AUC results also help fairly assess and compare the models. The logistic and LASSO regressions have an AUC of 0.985, the LDA AUC is 0.984 and the QDA AUC is 0.987. This indicates the QDA model is the most accurate, making it the better classifier. However, as this result contracts to it's test error of 6.57%, further investigation is needed to determine why there are conflicting results; for example, code error. 
 
-However, as mentioned in the logistic regression section, the test error was slightly larger than the training error. This indicates unnecessary predictor variables have been included. Cell Shape (CSh) had the largest p-value of the chosen six variables, so the classifier may benefit from re-running the logistic regression without this variable.
+None of the classifier models include all nine cytological characteristics. Using the methods of AIC and BIC it was determined that six predictor variables was likely to provide the most accurate model. Through logistic regression best subset selection, it was determined these variables should be: CT, CSh, MA, BN, BC, and NN. This result aligned to the subset selection of a LASSO regression applied to the data set of nine cytological characteristics. It is interesting that the LASSO regression performed on the train data set did conduct indicate the need for any further subset selection as none of the regression coefficients were completely shrunk to zero. However, the logistic regression test error was larger than its training error. These two insights indicate further experimentation with the predictor variables would be beneficial to improve the accuracy of our classifier model.
 
-Similarly, it was interesting that the LASSO regression did conduct any further subset selection from the six variables. It would be interesting to re-run the LASSO regression on the original standardised data, before best subset selection with the logistic regression, to determine whether this would improve the accuracy of the model.
-
-All of the models applied in this report have test error rates that would be impractical in a clinical setting. Further investigation would be beneficial to improve the accuracy of the models; this could include different methods of best subset selection, dividing the test and train data differently (perhaps by only using cross-validation k-folds), and, ideally, access to a much larger data set to avoid over-fitting the models. 
+All of the models applied in this report have test error rates that would be impractical in a clinical setting; the test errors are far too large. Further work is needed to improve the accuracy of the models; this could include different methods of best subset selection, dividing the test and train data differently (and perhaps only using cross-validation *k*-folds), and, ideally, access to a much larger data set. 
 
 \newpage
 ### Appendix A: Denisty Distributions of Cytological Characteristics by Class

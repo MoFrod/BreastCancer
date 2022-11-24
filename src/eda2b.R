@@ -1,4 +1,4 @@
-#LASSO - Re-written code to determine error
+#LASSO - Re-written code to find error.
 # Choose grid of values for the turning parameter
 grid = 10^seq(5, -3, length = 100)
 
