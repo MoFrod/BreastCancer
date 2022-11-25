@@ -461,16 +461,73 @@ text(x = .25, y = .65, paste("AUC = ", round(auc.train.qda[[1]],3), sep = ""))
 
 Interestingly, the ROC curve suggests the QDA model is the most accurate despite. As its test error is larger than either of the regression this warrants further investigation.
 
+### Cross-validation with *k*-folds
+
+As the logistic and LASSO regression test scores are so similar, cross-validation with the same 10 *k*-folds is used to determine the mean MSE for each regression. This cross-validation error helps the models be compared fairly. The mean MSE for the logistic regression rounds to 0.04 and, for the LASSO regression, it rounds to 0.03. Therefore, the LASSO regression is a more accurate classifier model.
+
+```{r cv, include=FALSE}
+# Cross-validation based on test error.
+
+## LOG
+
+#Set seed to make the analysis reproducible
+set.seed(1)
+x1 <- bc_data_red[,1:6] #Extract response variable
+yClass <- bc_data_red[,7] #Extract the predictor variables
+
+# 10-fold cross validation
+nfolds <- 10
+
+# Sample fold-assignment index
+fold_index <- sample(nfolds, nrow(x1), replace=TRUE)
+
+# Function to estimate the mean squared error (MSE) by k-fold cross validation for logistic regression
+reg_cv = function(X1, y, fold_ind) {
+  Xy = data.frame(X1, y=y)
+  nfolds = max(fold_ind)
+  if(!all.equal(sort(unique(fold_ind)), 1:nfolds)) stop("Invalid fold partition.")
+  cv_errors = numeric(nfolds)
+  for(fold in 1:nfolds) {
+    tmp_fit = glm(y ~ ., data=Xy[fold_ind!=fold,])
+    yhat = predict(tmp_fit, Xy[fold_ind==fold,])
+    yobs = y[fold_ind==fold]
+    cv_errors[fold] = mean((yobs - yhat)^2)
+  }
+  fold_sizes = numeric(nfolds)
+  for(fold in 1:nfolds) fold_sizes[fold] = length(which(fold_ind==fold))
+  test_error = weighted.mean(cv_errors, w=fold_sizes)
+  return(test_error)
+}
+
+# applying to data
+(logr_final_mse = reg_cv(bc_data_red[,1:6], bc_data_red[,7], fold_index)) #0.03806376
+
+#x as matrix
+m.x1 <- as.matrix(x1)
+
+# Cross validation for lasso using nfolds for consistency
+lasso_cv = cv.glmnet(m.x1, yClass, family = "binomial", alpha = 1, standardize = FALSE, lambda = grid, type.measure = "class", foldid = fold_index)
+
+#Identify the optimal value for the turning parameter
+(lambda_min = lasso_cv$lambda.min) #0.003053856
+(i = which(lasso_cv$lambda == lambda_min)) #93
+
+#Extract mean MSE
+lasso_final_mse <- lasso_cv$cvm[i] #0.03221083
+
+```
 
 ### Evaluation
 
-Based on the predictive performance of the models, the LASSO regression has the lowest test error of 0.05839416. This is almost negligibly smaller than the logistic regression as both test errors round to 5.85%. These are followed by QDA (6.57%) and LDA (7.30%). The validation set approach (splitting the data into two) was applied to fairly assess and compare the supervised learning techniques. As smaller test errors indicate more accurate models, the findings outlined by this report suggest that the LASSO regression would be the best classifier. 
+The objective of the project outlined by this report is to build a classifier that determines whether a tissue sample is likely to be benign or malignant based on its cytological characteristics. Based on set validation and cross-validation error scores, the LASSO regression on a subset of six characteristics provides the better classifier. 
 
-The ROC curves and AUC results also help fairly assess and compare the models. The logistic and LASSO regressions have an AUC of 0.985, the LDA AUC is 0.984 and the QDA AUC is 0.987. This indicates the QDA model is the most accurate, making it the better classifier. However, as this result contracts to it's test error of 6.57%, further investigation is needed to determine why there are conflicting results; for example, code error. 
+Based on the predictive performance of the models, the LASSO regression has the lowest test error of 0.05839416. This is almost negligibly smaller than the logistic regression as both test errors round to 5.85%. These are followed by QDA (6.57%) and LDA (7.30%). The validation set approach (splitting the data into two) was applied to fairly assess and compare the supervised learning techniques. As smaller test errors indicate more accurate models, the findings outlined by this report suggest that the LASSO regression would be the best classifier. This is supported by the results of the 10 *k*-fold cross-validation, where the LASSO regression mean MSE is 0.3, whereas the logistic regression mean MSE is 0.4.
+
+The ROC curves and AUC results also help compare the models. The logistic and LASSO regressions have an AUC of 0.985, the LDA AUC is 0.984 and the QDA AUC is 0.987. This indicates the QDA model is the most accurate, making it the better classifier. However, as this result contracts to it's test error of 6.57%, further investigation is needed to determine why there are conflicting results; for example, code error. 
 
 None of the classifier models include all nine cytological characteristics. Using the methods of AIC and BIC it was determined that six predictor variables was likely to provide the most accurate model. Through logistic regression best subset selection, it was determined these variables should be: CT, CSh, MA, BN, BC, and NN. This result aligned to the subset selection of a LASSO regression applied to the data set of nine cytological characteristics. It is interesting that the LASSO regression performed on the train data set did conduct indicate the need for any further subset selection as none of the regression coefficients were completely shrunk to zero. However, the logistic regression test error was larger than its training error. These two insights indicate further experimentation with the predictor variables would be beneficial to improve the accuracy of our classifier model.
 
-All of the models applied in this report have test error rates that would be impractical in a clinical setting; the test errors are far too large. Further work is needed to improve the accuracy of the models; this could include different methods of best subset selection, dividing the test and train data differently (and perhaps only using cross-validation *k*-folds), and, ideally, access to a much larger data set. 
+All of the models applied in this report have test error rates that would be impractical in a clinical setting; the test errors are far too large. Further work is needed to improve the accuracy of the models; this could include different methods of best subset selection, dividing the test and train data differently (and perhaps only using cross-validation *k*-folds), and, ideally, access to a much larger data set.  
 
 \newpage
 ### Appendix A: Denisty Distributions of Cytological Characteristics by Class
